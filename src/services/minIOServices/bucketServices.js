@@ -54,7 +54,7 @@ const removeBucket = async (bucketName) => {
   }
 };
 
-// List chapters in a bucket
+// List chapters in a comic
 const getListChapters = async (bucketName, prefix = '', recursive = false) => {
   try {
     const chapters = [];

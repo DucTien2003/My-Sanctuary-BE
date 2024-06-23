@@ -1,0 +1,127 @@
+const pool = require('../config/database');
+const { isEmpty } = require('../utils');
+
+const getUserById = async (userID) => {
+  try {
+    const [userInfo] = await pool.query('SELECT * FROM users WHERE id = ?', [
+      userID,
+    ]);
+
+    return userInfo.length > 0 ? userInfo[0] : {};
+  } catch (error) {
+    console.log('Error: ', error);
+    return {};
+  }
+};
+
+const getUserByUsername = async (username) => {
+  try {
+    const [userInfo] = await pool.query(
+      'SELECT * FROM users WHERE username = ?',
+      [username]
+    );
+
+    return userInfo.length > 0 ? userInfo[0] : {};
+  } catch (error) {
+    console.log('Error: ', error);
+    return {};
+  }
+};
+
+const getUserByEmail = async (email) => {
+  try {
+    const [userInfo] = await pool.query('SELECT * FROM users WHERE email = ?', [
+      email,
+    ]);
+
+    return userInfo.length > 0 ? userInfo[0] : {};
+  } catch (error) {
+    console.log('Error: ', error);
+    return {};
+  }
+};
+
+const createUser = async (username, password, email) => {
+  try {
+    const status = await pool.query(
+      'INSERT INTO users (name, username, password, email) VALUES (?, ?, ?, ?)',
+      [username, username, password, email]
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.log('Error: ', error);
+    return {};
+  }
+};
+
+const updateResetCodeByEmail = async (email, resetCode, expires) => {
+  try {
+    const result = await pool.query(
+      'UPDATE users SET reset_code = ?, reset_expires = ? WHERE email = ?',
+      [resetCode, expires, email]
+    );
+
+    if (result.affectedRows === 0) {
+      return { success: false, message: 'No user found with the given email' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.log('Error: ', error);
+    return {};
+  }
+};
+
+const getUserByResetCode = async (resetCode) => {
+  try {
+    const [userInfo] = await pool.query(
+      'SELECT * FROM users WHERE reset_code = ?',
+      [resetCode]
+    );
+
+    return userInfo.length > 0 ? userInfo[0] : {};
+  } catch (error) {
+    console.log('Error: ', error);
+    return {};
+  }
+};
+
+const updatePasswordByResetCode = async (resetCode, password) => {
+  const userInfo = await getUserByResetCode(resetCode);
+
+  if (isEmpty(userInfo)) {
+    return {
+      success: false,
+      message: 'Your verification code is invalid or has expired',
+    };
+  } else {
+    try {
+      const result = await pool.query(
+        'UPDATE users SET password = ?, reset_code = ?, reset_expires = ? WHERE reset_code = ?',
+        [password, null, null, resetCode]
+      );
+
+      if (userInfo.reset_expires < new Date()) {
+        return {
+          success: false,
+          message: 'Your verification code is invalid or has expired',
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.log('Error: ', error);
+      return {};
+    }
+  }
+};
+
+module.exports = {
+  createUser,
+  getUserById,
+  getUserByEmail,
+  getUserByUsername,
+  updateResetCodeByEmail,
+  updatePasswordByResetCode,
+};

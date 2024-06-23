@@ -10,7 +10,7 @@ const mysql = require('mysql2/promise');
 // });
 
 // Connection Pools
-const connection = mysql.createPool({
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
@@ -21,4 +21,4 @@ const connection = mysql.createPool({
   queueLimit: 0,
 });
 
-module.exports = connection;
+module.exports = pool;
