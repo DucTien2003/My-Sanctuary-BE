@@ -3,7 +3,7 @@ require('dotenv').config();
 const cors = require('cors');
 const express = require('express');
 
-const apiRoutes = require('./routes/api.js');
+const declareRoutes = require('./routes/api.js');
 // const webRoutes = require('./routes/web.js');
 
 const app = express();
@@ -18,7 +18,7 @@ app.use(express.json()); // For Json
 app.use(express.urlencoded({ extended: true })); // For form data
 
 // Config pre-route
-app.use('/', apiRoutes);
+declareRoutes(app);
 
 app.listen(port, hostname, () => {
   console.log(`listening on port ${port}...`);

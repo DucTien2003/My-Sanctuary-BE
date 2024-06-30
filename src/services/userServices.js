@@ -1,13 +1,32 @@
 const pool = require('../config/database');
-const { isEmpty } = require('../utils');
+const { isEmpty, convertToCamelCase } = require('../utils');
 
-const getUserById = async (userID) => {
+const getUserById = async (userId) => {
   try {
     const [userInfo] = await pool.query('SELECT * FROM users WHERE id = ?', [
-      userID,
+      userId,
     ]);
 
-    return userInfo.length > 0 ? userInfo[0] : {};
+    return userInfo.length > 0 ? convertToCamelCase(userInfo[0]) : {};
+  } catch (error) {
+    console.log('Error: ', error);
+    return {};
+  }
+};
+
+const getUsersByIds = async (userIds) => {
+  if (userIds.length === 0) {
+    return [];
+  }
+
+  const placeholders = userIds.map(() => '?').join(', ');
+  try {
+    const [usersInfo] = await pool.query(
+      `SELECT * FROM users WHERE id IN (${placeholders})`,
+      userIds
+    );
+
+    return convertToCamelCase(usersInfo);
   } catch (error) {
     console.log('Error: ', error);
     return {};
@@ -21,7 +40,7 @@ const getUserByUsername = async (username) => {
       [username]
     );
 
-    return userInfo.length > 0 ? userInfo[0] : {};
+    return userInfo.length > 0 ? convertToCamelCase(userInfo[0]) : {};
   } catch (error) {
     console.log('Error: ', error);
     return {};
@@ -34,7 +53,7 @@ const getUserByEmail = async (email) => {
       email,
     ]);
 
-    return userInfo.length > 0 ? userInfo[0] : {};
+    return userInfo.length > 0 ? convertToCamelCase(userInfo[0]) : {};
   } catch (error) {
     console.log('Error: ', error);
     return {};
@@ -80,7 +99,7 @@ const getUserByResetCode = async (resetCode) => {
       [resetCode]
     );
 
-    return userInfo.length > 0 ? userInfo[0] : {};
+    return userInfo.length > 0 ? convertToCamelCase(userInfo[0]) : {};
   } catch (error) {
     console.log('Error: ', error);
     return {};
@@ -120,6 +139,7 @@ const updatePasswordByResetCode = async (resetCode, password) => {
 module.exports = {
   createUser,
   getUserById,
+  getUsersByIds,
   getUserByEmail,
   getUserByUsername,
   updateResetCodeByEmail,

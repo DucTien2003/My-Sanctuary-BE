@@ -1,46 +1,65 @@
-const { isEmpty } = require('../utils');
-
-const { getComicById } = require('../services/comicServices.js');
 const {
-  getImagesOfChapter,
   getChapterById,
+  updateChapterViews,
+  getImagesOfChapter,
   getAllChaptersByComicId,
 } = require('../services/chapterServices');
 
-const getChapterPage = async (req, res) => {
-  Promise.all([
-    getImagesOfChapter(req.params.chapterId),
-    getChapterById(req.params.chapterId),
-  ])
-    .then((values) => {
-      if (isEmpty(values[1])) {
-        res.status(404).json({ message: 'Chapter not found' });
-      } else {
-        Promise.all([
-          getAllChaptersByComicId(values[1].comic_id),
-          getComicById(values[1].comic_id),
-        ])
-          .then((results) => {
-            const [listChapters, comicInfo] = results;
-            res.json({
-              comicInfo: comicInfo,
-              listImages: values[0],
-              chapterInfo: values[1],
-              listChapters: listChapters,
-            });
-          })
-          .catch((error) => {
-            console.log('Error: ', error);
-            res.status(500).json({});
-          });
-      }
+const handleGetImagesOfChapter = async (req, res) => {
+  const chapterId = req.params.chapterId;
+
+  getImagesOfChapter(chapterId)
+    .then((images) => {
+      return res.json(images);
     })
     .catch((error) => {
       console.log('Error: ', error);
-      res.status(500).json({});
+      return res.status(500).json([]);
+    });
+};
+
+const handleGetChapterById = async (req, res) => {
+  const chapterId = req.params.chapterId;
+
+  getChapterById(chapterId)
+    .then((chapters) => {
+      return res.json(chapters);
+    })
+    .catch((error) => {
+      console.log('Error: ', error);
+      return res.status(500).json({});
+    });
+};
+
+const handleGetAllChaptersByComicId = async (req, res) => {
+  const comicId = req.params.comicId;
+
+  getAllChaptersByComicId(comicId)
+    .then((chapters) => {
+      return res.json(chapters);
+    })
+    .catch((error) => {
+      console.log('Error: ', error);
+      return res.status(500).json([]);
+    });
+};
+
+const handleUpdateChapterViews = async (req, res) => {
+  const chapterId = req.params.chapterId;
+
+  updateChapterViews(chapterId)
+    .then((result) => {
+      return res.json(result);
+    })
+    .catch((error) => {
+      console.log('Error handleUpdateChapterViews: ', error);
+      return res.status(500).json(false);
     });
 };
 
 module.exports = {
-  getChapterPage,
+  handleGetChapterById,
+  handleUpdateChapterViews,
+  handleGetImagesOfChapter,
+  handleGetAllChaptersByComicId,
 };

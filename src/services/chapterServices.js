@@ -1,10 +1,10 @@
 const pool = require('../config/database');
 const minioClient = require('../config/minIO');
 
-const { sortByLastNumber } = require('../utils');
+const { sortByLastNumber, convertToCamelCase } = require('../utils');
 
 // List images in a chapter
-const getImagesOfChapter = async (chapterID, recursive = true) => {
+const getImagesOfChapter = async (chapterId, recursive = true) => {
   try {
     const [infoMinIO, fields] = await pool.query(
       `SELECT
@@ -16,7 +16,7 @@ const getImagesOfChapter = async (chapterID, recursive = true) => {
         comics ON chapters.comic_id = comics.id
       WHERE
         chapters.id = ?`,
-      [chapterID]
+      [chapterId]
     );
 
     if (infoMinIO.length === 0) return [];
@@ -45,43 +45,78 @@ const getImagesOfChapter = async (chapterID, recursive = true) => {
 
     const imageUrls = await Promise.all(imageUrlPromises);
 
-    return imageUrls;
+    return convertToCamelCase(imageUrls);
   } catch (error) {
     console.log('Error: ', error);
     return [];
   }
 };
 
-const getChapterById = async (chapterID) => {
+const getChapterById = async (chapterId) => {
   try {
     const [chapterInfo] = await pool.query(
       'SELECT * FROM chapters WHERE id = ?',
-      [chapterID]
+      [chapterId]
     );
 
-    return chapterInfo.length > 0 ? chapterInfo[0] : {};
+    return chapterInfo.length > 0 ? convertToCamelCase(chapterInfo[0]) : {};
   } catch (error) {
     console.log('Error: ', error);
     return {};
   }
 };
 
-const getAllChaptersByComicId = async (comicID) => {
+const getChaptersByIds = async (chapterIds) => {
+  if (chapterIds.length === 0) {
+    return [];
+  }
+
+  const placeholders = chapterIds.map(() => '?').join(', ');
+  try {
+    const [chaptersInfo] = await pool.query(
+      `SELECT * FROM chapters WHERE id IN (${placeholders})`,
+      chapterIds
+    );
+
+    return convertToCamelCase(chaptersInfo);
+  } catch (error) {
+    console.log('Error: ', error);
+    return {};
+  }
+};
+
+const getAllChaptersByComicId = async (comicId) => {
   try {
     const [allChapters, fields] = await pool.query(
       `SELECT * FROM chapters WHERE comic_id = ? ORDER BY 'index' ASC`,
-      [comicID]
+      [comicId]
     );
 
-    return allChapters;
+    return convertToCamelCase(allChapters);
   } catch (error) {
     console.log('Error: ', error);
     return [];
   }
 };
 
+const updateChapterViews = async (chapterId) => {
+  try {
+    const [updateResult] = await pool.query(
+      `UPDATE chapters SET views = views + 1 WHERE id = ?`,
+      [chapterId]
+    );
+
+    return updateResult.affectedRows > 0;
+  } catch (error) {
+    console.log('Error: ', error);
+    return false;
+  }
+};
+
 module.exports = {
-  getImagesOfChapter,
   getChapterById,
+  getChaptersByIds,
+  getImagesOfChapter,
+  updateChapterViews,
   getAllChaptersByComicId,
 };

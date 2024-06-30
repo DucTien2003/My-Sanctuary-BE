@@ -1,4 +1,13 @@
-const extend = Object.assign;
+const _ = require('lodash');
+
+const convertToCamelCase = (obj) => {
+  if (_.isArray(obj)) {
+    return obj.map((v) => convertToCamelCase(v));
+  } else if (_.isObject(obj)) {
+    return _.mapKeys(obj, (value, key) => _.camelCase(key));
+  }
+  return obj;
+};
 
 // Add zero
 const addZero = (number) => {
@@ -36,10 +45,10 @@ const removeEndSlash = (str) => {
 };
 
 module.exports = {
-  extend,
   addZero,
-  showQuantity,
   isEmpty,
-  sortByLastNumber,
+  showQuantity,
   removeEndSlash,
+  sortByLastNumber,
+  convertToCamelCase,
 };

@@ -1,30 +1,15 @@
-const express = require('express');
+const authRoutes = require('./authRoutes.js');
+const userRoutes = require('./userRoutes.js');
+const comicRoutes = require('./comicRoutes.js');
+const chapterRoutes = require('./chapterRoutes.js');
+const commentRoutes = require('./commentRoutes.js');
 
-const { getHomePage } = require('../controllers/homeController.js');
-const { getComicPage } = require('../controllers/comicController.js');
-const { getChapterPage } = require('../controllers/chapterController.js');
-const { getUserInfoByToken } = require('../controllers/userInfoController.js');
-const {
-  handleLogin,
-  handleRegister,
-  handleResetPassword,
-  handleForgotPassword,
-} = require('../controllers/authController.js');
+const declareRoutes = (app) => {
+  app.use('/api/auth', authRoutes);
+  app.use('/api/user', userRoutes);
+  app.use('/api/comic', comicRoutes);
+  app.use('/api/chapter', chapterRoutes);
+  app.use('/api/comment', commentRoutes);
+};
 
-const router = express.Router();
-
-// Pages
-router.get('/api/home', getHomePage);
-router.get('/api/comic/:comicId', getComicPage);
-router.get('/api/chapter/:chapterId', getChapterPage);
-
-// User info
-router.get('/api/user', getUserInfoByToken);
-
-// Auth
-router.post('/api/auth/login', handleLogin);
-router.post('/api/auth/register', handleRegister);
-router.post('/api/auth/reset-password', handleResetPassword);
-router.post('/api/auth/forgot-password', handleForgotPassword);
-
-module.exports = router;
+module.exports = declareRoutes;
