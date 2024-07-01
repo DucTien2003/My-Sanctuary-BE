@@ -41,6 +41,7 @@ const handleLogin = async (req, res, next) => {
         {
           id: user.id,
           role: user.role,
+          name: user.name,
           email: user.email,
           avatar: user.avatar,
           username: user.username,

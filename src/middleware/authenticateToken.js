@@ -6,6 +6,7 @@ function authenticateToken(req, res, next) {
   if (!token) {
     req.id = null;
     req.role = null;
+    req.name = null;
     req.email = null;
     req.avatar = null;
     req.username = null;
@@ -23,6 +24,7 @@ function authenticateToken(req, res, next) {
 
     req.id = payload.id;
     req.role = payload.role;
+    req.name = payload.name;
     req.email = payload.email;
     req.avatar = payload.avatar;
     req.username = payload.username;
