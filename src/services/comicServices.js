@@ -71,10 +71,73 @@ const deleteComicRating = async (comicId, userId) => {
   }
 };
 
+const getComicBookmarkByUserId = async (comicId, userId) => {
+  try {
+    const [comicBookmark, fields] = await pool.query(
+      `SELECT * FROM bookmark_comics_users WHERE user_id = ? AND comic_id = ?`,
+      [userId, comicId]
+    );
+
+    return comicBookmark.length > 0 ? convertToCamelCase(comicBookmark[0]) : {};
+  } catch (error) {
+    console.log('Error getComicBookmarkByUserId: ', error);
+    return {};
+  }
+};
+
+const createComicBookmark = async (comicId, userId) => {
+  try {
+    const [result, fields] = await pool.query(
+      `INSERT INTO bookmark_comics_users (user_id, comic_id) VALUES (?, ?)`,
+      [userId, comicId]
+    );
+
+    return result;
+  } catch (error) {
+    console.log('Error createComicBookmark: ', error);
+    return {};
+  }
+};
+
+const deleteComicBookmark = async (comicId, userId) => {
+  try {
+    const [result, fields] = await pool.query(
+      `DELETE FROM bookmark_comics_users WHERE user_id = ? AND comic_id = ?`,
+      [userId, comicId]
+    );
+
+    return result;
+  } catch (error) {
+    console.log('Error deleteComicBookmark: ', error);
+    return {};
+  }
+};
+
+const getGenresByComicId = async (comicId) => {
+  try {
+    const [genres, fields] = await pool.query(
+      `SELECT gen.* FROM genres gen
+      INNER JOIN comics_genres cg ON gen.id = cg.genre_id
+      WHERE cg.comic_id = ?
+      ORDER BY gen.title ASC`,
+      [comicId]
+    );
+
+    return genres.length > 0 ? convertToCamelCase(genres) : [];
+  } catch (error) {
+    console.log('Error getRenresByComicId: ', error);
+    return [];
+  }
+};
+
 module.exports = {
   getComicById,
   createComicRating,
   updateComicRating,
   deleteComicRating,
+  getGenresByComicId,
+  createComicBookmark,
+  deleteComicBookmark,
   getComicRatingByUserId,
+  getComicBookmarkByUserId,
 };

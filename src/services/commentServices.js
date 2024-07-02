@@ -105,7 +105,7 @@ const getAllCommentsByComicId = async (comicId) => {
           parentComment = commentMap.get(parentComment.parent_id);
         }
         if (parentComment) {
-          parentComment.replies.push(comment);
+          parentComment.replies.push(convertToCamelCase(comment));
         }
       }
     });
