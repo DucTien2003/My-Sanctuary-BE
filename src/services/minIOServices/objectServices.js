@@ -1,11 +1,7 @@
 const path = require('path');
 
-const minioClient = require('../../config/minIO');
-const {
-  bucketExists,
-  createBucket,
-  getListChapters,
-} = require('./bucketServices');
+const { minioClient } = require('../../config/minIO');
+const { getListChapters } = require('./bucketServices');
 
 // Check exists of a chapter
 const chapterExists = async (bucketName, chapterName) => {
@@ -18,61 +14,99 @@ const chapterExists = async (bucketName, chapterName) => {
   }
 };
 
-// Upload chapter
-const uploadChapter = async (bucketName, chapterName, images = [0, 1]) => {
+// Check exists of a image
+const imageExists = async (bucketName, objectName) => {
   try {
-    // Kiểm tra và tạo bucket nếu chưa tồn tại
-    const isBucketExists = await bucketExists(bucketName);
-    if (!isBucketExists.exists) {
-      await createBucket(bucketName);
+    await minioClient.statObject(bucketName, objectName);
+    return true;
+  } catch (error) {
+    if (error.code === 'NotFound') {
+      return false;
     }
+    throw error;
+  }
+};
 
-    // Kiểm tra và tạo folder cho chapter nếu chưa tồn tại
-    const isChapterExists = await chapterExists(bucketName, chapterName);
-    console.log(isChapterExists);
-    if (!isChapterExists.isExists) {
-      const uploadPromises = images.map(async (image, index) => {
-        const objectName = `${chapterName}/image_${index}.jpg`;
-        const relativeFilePath = `src/assets/images/Darwins Game Chap 125 page 56.jpg`; // Đường dẫn tương đối đến ảnh
-        const absoluteFilePath = path.resolve(relativeFilePath); // Chuyển đổi đường dẫn tương đối thành đường dẫn tuyệt đối
-        await minioClient.fPutObject(bucketName, objectName, absoluteFilePath);
-      });
+// Upload chapter
+const uploadImage = async (bucketName, objectName, imageFile) => {
+  try {
+    const port = process.env.MIO_PORT;
+    const domain = process.env.MIO_DOMAIN;
+    const metaData = {
+      'Content-Type': imageFile.mimetype,
+    };
 
-      // Chờ tất cả các lượt upload hoàn thành
-      await Promise.all(uploadPromises);
-    }
+    const result = await minioClient.putObject(
+      bucketName,
+      objectName,
+      imageFile.buffer,
+      metaData,
+      (err, etag) => {
+        if (err) {
+          console.log('Error uploadImage: ', err);
+          throw err;
+        } else {
+          const fileUrl = `${domain}:${port}/${bucketName}/${objectName}`;
 
-    console.log(`Chapter ${chapterName} uploaded successfully!`);
+          return { success: true, fileUrl };
+        }
+      }
+    );
+
+    return result;
+  } catch (err) {
+    console.log('Error uploadImage: ', err);
+    return { success: false, error: err };
+  }
+};
+
+// Remove image
+const removeImage = async (bucketName, objectName) => {
+  try {
+    await minioClient.removeObject(bucketName, objectName);
     return { success: true };
   } catch (err) {
-    console.error(`Error uploading chapter ${chapterName}:`, err);
+    console.log('Error removeImage: ', err);
     return { success: false, error: err };
   }
 };
 
 // Remove chapter
 const removeChapter = async (bucketName, chapterName) => {
-  const objectsList = [];
+  return new Promise((resolve, reject) => {
+    const objectsList = [];
 
-  // List all object paths in bucket my-bucketname.
-  const objectsStream = minioClient.listObjects(bucketName, chapterName, true);
+    const objectsStream = minioClient.listObjects(
+      bucketName,
+      chapterName,
+      true
+    );
 
-  objectsStream.on('data', function (obj) {
-    objectsList.push(obj.name);
-  });
+    objectsStream.on('data', function (obj) {
+      objectsList.push(obj.name);
+    });
 
-  objectsStream.on('error', function (e) {
-    console.log(e);
-  });
+    objectsStream.on('error', function (e) {
+      console.log(e);
+      reject({ success: false, error: e });
+    });
 
-  objectsStream.on('end', function () {
-    minioClient.removeObjects(bucketName, objectsList, function (err) {
-      if (err) {
-        return { success: false, error: err };
-      }
-      return { success: true };
+    objectsStream.on('end', function () {
+      minioClient.removeObjects(bucketName, objectsList, function (err) {
+        if (err) {
+          reject({ success: false, error: err });
+        } else {
+          resolve({ success: true });
+        }
+      });
     });
   });
 };
 
-export { uploadChapter, removeChapter };
+module.exports = {
+  removeImage,
+  imageExists,
+  uploadImage,
+  removeChapter,
+  chapterExists,
+};

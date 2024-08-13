@@ -26,10 +26,14 @@ const getUsersByIds = async (userIds) => {
       userIds
     );
 
+    if (usersInfo.length === 0) {
+      return [];
+    }
+
     return convertToCamelCase(usersInfo);
   } catch (error) {
     console.log('Error: ', error);
-    return {};
+    return [];
   }
 };
 
@@ -62,21 +66,25 @@ const getUserByEmail = async (email) => {
 
 const createUser = async (username, password, email) => {
   try {
-    const status = await pool.query(
+    const [result] = await pool.query(
       'INSERT INTO users (name, username, password, email) VALUES (?, ?, ?, ?)',
       [username, username, password, email]
     );
 
+    if (result.affectedRows === 0) {
+      return { success: false };
+    }
+
     return { success: true };
   } catch (error) {
     console.log('Error: ', error);
-    return {};
+    return { success: false };
   }
 };
 
 const updateResetCodeByEmail = async (email, resetCode, expires) => {
   try {
-    const result = await pool.query(
+    const [result] = await pool.query(
       'UPDATE users SET reset_code = ?, reset_expires = ? WHERE email = ?',
       [resetCode, expires, email]
     );
@@ -88,7 +96,7 @@ const updateResetCodeByEmail = async (email, resetCode, expires) => {
     return { success: true };
   } catch (error) {
     console.log('Error: ', error);
-    return {};
+    return { success: false };
   }
 };
 
@@ -109,29 +117,26 @@ const getUserByResetCode = async (resetCode) => {
 const updatePasswordByResetCode = async (resetCode, password) => {
   const userInfo = await getUserByResetCode(resetCode);
 
-  if (isEmpty(userInfo)) {
+  if (isEmpty(userInfo) || userInfo.reset_expires < new Date()) {
     return {
       success: false,
       message: 'Your verification code is invalid or has expired',
     };
   } else {
     try {
-      const result = await pool.query(
+      const [result] = await pool.query(
         'UPDATE users SET password = ?, reset_code = ?, reset_expires = ? WHERE reset_code = ?',
         [password, null, null, resetCode]
       );
 
-      if (userInfo.reset_expires < new Date()) {
-        return {
-          success: false,
-          message: 'Your verification code is invalid or has expired',
-        };
+      if (result.affectedRows === 0) {
+        return { success: false };
       }
 
       return { success: true };
     } catch (error) {
       console.log('Error: ', error);
-      return {};
+      return { success: false };
     }
   }
 };

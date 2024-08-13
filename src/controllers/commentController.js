@@ -22,9 +22,15 @@ const handleComment = async (req, res) => {
 
   Promise.all([createComment(content, comicId, userId), getUserById(userId)])
     .then(async (values) => {
-      const [newCommentId, userInfo] = values;
-      const commentInfo = await getCommentById(newCommentId);
+      const [resultCreateComment, userInfo] = values;
 
+      if (!resultCreateComment.success) {
+        return res.status(500).json({ message: 'Error when create comment' });
+      }
+
+      const commentInfo = await getCommentById(
+        resultCreateComment.newCommentId
+      );
       return res.json({ ...commentInfo, user: userInfo });
     })
     .catch((error) => {
@@ -44,9 +50,12 @@ const handleReplyComment = async (req, res) => {
     getUserById(userId),
   ])
     .then(async (values) => {
-      const [newCommentId, userInfo] = values;
-      const commentInfo = await getCommentById(newCommentId);
+      const [resultCreateReply, userInfo] = values;
+      if (!resultCreateReply.success) {
+        return res.status(500).json({ message: 'Error when create reply' });
+      }
 
+      const commentInfo = await getCommentById(resultCreateReply.newCommentId);
       return res.json({ ...commentInfo, user: userInfo });
     })
     .catch((error) => {
@@ -142,10 +151,10 @@ const handleGetAllCommentsByComicId = async (req, res) => {
       })),
     }));
 
-    res.json(listComments);
+    return res.json(listComments);
   } catch (error) {
     console.log('Error handleGetAllCommentsByComicId: ', error);
-    res.status(500).json([]);
+    return res.status(500).json([]);
   }
 };
 
@@ -155,11 +164,11 @@ const handleLikeDislike = async (req, res) => {
   const likeDislike = req.params.likeDislike;
 
   try {
-    const like = await createLikeDislike(commentId, userId, likeDislike);
-    res.json(like);
+    const result = await createLikeDislike(commentId, userId, likeDislike);
+    return res.json(result);
   } catch (error) {
     console.log('Error handleLikeDislike: ', error);
-    res.status(500).json({});
+    return res.status(500).json({});
   }
 };
 
@@ -169,11 +178,11 @@ const handleUpdateLikeDislike = async (req, res) => {
   const likeDislike = req.params.likeDislike;
 
   try {
-    const like = await updateLikeDislike(commentId, userId, likeDislike);
-    res.json(like);
+    const result = await updateLikeDislike(commentId, userId, likeDislike);
+    return res.json(result);
   } catch (error) {
     console.log('Error handleUpdateLikeDislike: ', error);
-    res.status(500).json({});
+    return res.status(500).json({});
   }
 };
 
@@ -182,11 +191,11 @@ const handleDeleteLikeDislike = async (req, res) => {
   const commentId = req.params.commentId;
 
   try {
-    await deleteLikeDislike(commentId, userId);
-    res.json({ message: 'Delete like/dislike successfully' });
-  } catch (error) {
+    const result = await deleteLikeDislike(commentId, userId);
+    return res.json(result);
+  } catch (result) {
     console.log('Error handleDeleteLikeDislike: ', error);
-    res.status(500).json({});
+    return res.status(500).json({});
   }
 };
 

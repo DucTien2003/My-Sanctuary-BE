@@ -44,9 +44,18 @@ const removeEndSlash = (str) => {
   return str.replace(/\/+$/, '');
 };
 
+// Reformat path
+const formatPath = (path) => {
+  return path
+    .replace(/[^a-zA-Z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+};
+
 module.exports = {
   addZero,
   isEmpty,
+  formatPath,
   showQuantity,
   removeEndSlash,
   sortByLastNumber,

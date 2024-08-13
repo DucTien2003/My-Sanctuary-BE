@@ -1,54 +1,59 @@
 const pool = require('../config/database');
-const minioClient = require('../config/minIO');
+const { convertToCamelCase } = require('../utils');
 
-const { sortByLastNumber, convertToCamelCase } = require('../utils');
-
-// List images in a chapter
-const getImagesOfChapter = async (chapterId, recursive = true) => {
+const getImagesByChapterId = async (chapterId) => {
   try {
-    const [infoMinIO, fields] = await pool.query(
-      `SELECT
-        comics.name_minio AS comic_name_minio,
-        chapters.name_minio AS chapter_name_minio
-      FROM
-        chapters
-      INNER JOIN
-        comics ON chapters.comic_id = comics.id
-      WHERE
-        chapters.id = ?`,
+    const [images] = await pool.query(
+      `SELECT * FROM images WHERE chapter_id = ? ORDER BY \`index\` ASC`,
       [chapterId]
     );
 
-    if (infoMinIO.length === 0) return [];
+    return images.length > 0 ? convertToCamelCase(images) : [];
+  } catch (error) {
+    console.log('Error getImagesByChapterId: ', error);
+    return [];
+  }
+};
 
-    const images = [];
-    const stream = minioClient.listObjects(
-      infoMinIO[0].comic_name_minio,
-      infoMinIO[0].chapter_name_minio + '/',
-      recursive
+const createImages = async (imagesInfo) => {
+  const query =
+    `INSERT INTO images (\`index\`, url, chapter_id) VALUES ` +
+    imagesInfo.map(() => '(?, ?, ?)').join(', ');
+
+  try {
+    const [result] = await pool.query(
+      query,
+      imagesInfo
+        .map((imageInfo) => [
+          imageInfo.index,
+          imageInfo.url,
+          imageInfo.chapterId,
+        ])
+        .flat()
     );
 
-    for await (const obj of stream) {
-      images.push(obj);
+    if (result.affectedRows === 0) {
+      return { success: false };
     }
 
-    const imageNames = sortByLastNumber(images.map((object) => object.name));
-
-    const imageUrlPromises = imageNames.map(async (name) => {
-      const url = await minioClient.presignedGetObject(
-        infoMinIO[0].comic_name_minio,
-        name
-      );
-
-      return url;
-    });
-
-    const imageUrls = await Promise.all(imageUrlPromises);
-
-    return convertToCamelCase(imageUrls);
+    return { success: true };
   } catch (error) {
-    console.log('Error: ', error);
-    return [];
+    console.log('Error createImage: ', error);
+    return { success: false };
+  }
+};
+
+const deleteImagesByChapterId = async (chapterId) => {
+  try {
+    const [result] = await pool.query(
+      `DELETE FROM images WHERE chapter_id = ?`,
+      [chapterId]
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.log('Error deleteImagesByChapterId: ', error);
+    return { success: false };
   }
 };
 
@@ -61,8 +66,67 @@ const getChapterById = async (chapterId) => {
 
     return chapterInfo.length > 0 ? convertToCamelCase(chapterInfo[0]) : {};
   } catch (error) {
-    console.log('Error: ', error);
+    console.log('Error getChapterById: ', error);
     return {};
+  }
+};
+
+const createChapter = async (chapterInfo) => {
+  try {
+    const [result] = await pool.query(
+      `INSERT INTO chapters (name, \`index\`, name_minio, comic_id) VALUES (?, ?, ?, ?)`,
+      [
+        chapterInfo.name,
+        chapterInfo.index,
+        chapterInfo.nameMinio,
+        chapterInfo.comicId,
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return { success: false };
+    }
+
+    return { success: true, insertId: result.insertId };
+  } catch (error) {
+    console.log('Error createChapter: ', error);
+    return { success: false };
+  }
+};
+
+const updateChapterByChapterId = async (chapterInfo) => {
+  try {
+    const [result] = await pool.query(
+      `UPDATE chapters SET name = ?, \`index\` = ?, name_minio = ? WHERE id = ?`,
+      [
+        chapterInfo.name,
+        chapterInfo.index,
+        chapterInfo.nameMinio,
+        chapterInfo.id,
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return { success: false };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.log('Error updateChapterByChapterId: ', error);
+    return { success: false };
+  }
+};
+
+const deleteChapterByChapterId = async (chapterId) => {
+  try {
+    const [result] = await pool.query(`DELETE FROM chapters WHERE id = ?`, [
+      chapterId,
+    ]);
+
+    return { success: true };
+  } catch (error) {
+    console.log('Error deleteChapterByChapterId: ', error);
+    return { success: false };
   }
 };
 
@@ -78,23 +142,23 @@ const getChaptersByIds = async (chapterIds) => {
       chapterIds
     );
 
-    return convertToCamelCase(chaptersInfo);
+    return chaptersInfo.length > 0 ? convertToCamelCase(chaptersInfo) : [];
   } catch (error) {
-    console.log('Error: ', error);
-    return {};
+    console.log('Error getChaptersByIds: ', error);
+    return [];
   }
 };
 
 const getAllChaptersByComicId = async (comicId) => {
   try {
     const [allChapters, fields] = await pool.query(
-      `SELECT * FROM chapters WHERE comic_id = ? ORDER BY 'index' ASC`,
+      `SELECT * FROM chapters WHERE comic_id = ? ORDER BY \`index\` ASC`,
       [comicId]
     );
 
     return convertToCamelCase(allChapters);
   } catch (error) {
-    console.log('Error: ', error);
+    console.log('Error getAllChaptersByComicId: ', error);
     return [];
   }
 };
@@ -108,15 +172,65 @@ const updateChapterViews = async (chapterId) => {
 
     return updateResult.affectedRows > 0;
   } catch (error) {
-    console.log('Error: ', error);
+    console.log('Error updateChapterViews: ', error);
     return false;
   }
 };
 
+const checkChapterIndexExists = async (comicId, index) => {
+  try {
+    const [chapterInfo] = await pool.query(
+      `SELECT * FROM chapters WHERE comic_id = ? and \`index\` = ?`,
+      [comicId, index]
+    );
+
+    return chapterInfo.length > 0;
+  } catch (error) {
+    console.log('Error checkChapterExists: ', error);
+    return false;
+  }
+};
+
+const checkChapterExistsByComicId = async (comicId) => {
+  try {
+    const [chaptersInfo] = await pool.query(
+      `SELECT * FROM chapters WHERE comic_id = ?`,
+      [comicId]
+    );
+
+    return chaptersInfo.length > 0;
+  } catch (error) {
+    console.log('Error checkChapterExistsByComicId: ', error);
+    return false;
+  }
+};
+
+const getLatestChapter = async (comicId) => {
+  try {
+    const [chapterInfo] = await pool.query(
+      'SELECT * FROM chapters WHERE comic_id = ? ORDER BY `index` DESC LIMIT 1',
+      [comicId]
+    );
+
+    return chapterInfo.length > 0 ? convertToCamelCase(chapterInfo[0]) : {};
+  } catch (error) {
+    console.log('Error checkChapterExistsByComicId: ', error);
+    return {};
+  }
+};
+
 module.exports = {
+  createImages,
+  createChapter,
   getChapterById,
+  getLatestChapter,
   getChaptersByIds,
-  getImagesOfChapter,
   updateChapterViews,
+  getImagesByChapterId,
+  checkChapterIndexExists,
+  deleteImagesByChapterId,
   getAllChaptersByComicId,
+  updateChapterByChapterId,
+  deleteChapterByChapterId,
+  checkChapterExistsByComicId,
 };

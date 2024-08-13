@@ -8,4 +8,20 @@ const minioClient = new Minio.Client({
   secretKey: process.env.MIO_SECRET_KEY,
 });
 
-module.exports = minioClient;
+const policyMinio = (bucketName) => {
+  return {
+    Version: '2012-10-17',
+    Statement: [
+      {
+        Effect: 'Allow',
+        Principal: {
+          AWS: ['*'],
+        },
+        Action: ['s3:GetObject'],
+        Resource: [`arn:aws:s3:::${bucketName}/*`],
+      },
+    ],
+  };
+};
+
+module.exports = { minioClient, policyMinio };

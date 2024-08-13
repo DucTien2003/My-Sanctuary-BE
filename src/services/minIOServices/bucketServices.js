@@ -1,4 +1,4 @@
-const minioClient = require('../../config/minIO');
+const { minioClient, policyMinio } = require('../../config/minIO');
 const { sortByLastNumber, removeEndSlash } = require('../../utils');
 
 // Create a bucket
@@ -12,8 +12,17 @@ const createBucket = async (bucketName) => {
           resolve();
         }
       });
+    }).then(() => {
+      minioClient.setBucketPolicy(
+        bucketName,
+        JSON.stringify(policyMinio(bucketName)),
+        function (err) {
+          if (err) {
+            throw err;
+          }
+        }
+      );
     });
-    console.log(`Bucket ${bucketName} created successfully`);
     return { success: true };
   } catch (err) {
     console.error(`Error creating bucket ${bucketName}:`, err);
@@ -36,10 +45,10 @@ const listBuckets = async () => {
 const bucketExists = async (bucketName) => {
   try {
     const exists = await minioClient.bucketExists(bucketName);
-    return { exists };
+    return exists;
   } catch (err) {
     console.error(`Error checking if bucket ${bucketName} exists:`, err);
-    return { exists: false, error: err };
+    return false;
   }
 };
 
@@ -92,6 +101,52 @@ const listObjectsV2 = async (bucketName, prefix = '', recursive = false) => {
   }
 };
 
+// Rename a bucket
+const renameBucket = async (oldName, newName) => {
+  try {
+    await createBucket(newName);
+
+    const objectsStream = minioClient.listObjectsV2(oldName, '', true);
+    const copyPromises = [];
+
+    objectsStream.on('data', (obj) => {
+      const copyPromise = minioClient.copyObject(
+        newName,
+        obj.name,
+        `${oldName}/${obj.name}`
+      );
+      copyPromises.push(copyPromise);
+    });
+
+    objectsStream.on('end', async () => {
+      try {
+        await Promise.all(copyPromises);
+
+        const deleteStream = minioClient.listObjectsV2(oldName, '', true);
+        const objectsList = [];
+
+        deleteStream.on('data', (obj) => {
+          objectsList.push(obj.name);
+        });
+
+        deleteStream.on('end', async () => {
+          await minioClient.removeObjects(oldName, objectsList);
+
+          await minioClient.removeBucket(oldName);
+          console.log(`Bucket ${oldName} renamed to ${newName}`);
+        });
+      } catch (err) {
+        console.error('Error during copy or delete operation:', err);
+      }
+    });
+
+    return { success: true };
+  } catch (err) {
+    console.error(`Error renaming bucket ${oldName} to ${newName}:`, err);
+    return { success: false, error: err };
+  }
+};
+
 // List incomplete uploads in a bucket
 const listIncompleteUploads = async (
   bucketName,
@@ -117,12 +172,13 @@ const listIncompleteUploads = async (
   }
 };
 
-export {
-  createBucket,
+module.exports = {
   listBuckets,
+  renameBucket,
+  createBucket,
   bucketExists,
   removeBucket,
-  getListChapters,
   listObjectsV2,
+  getListChapters,
   listIncompleteUploads,
 };

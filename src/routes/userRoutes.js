@@ -9,6 +9,7 @@ const {
 const router = express.Router();
 
 router.get('/auth', getUserInfoByToken);
+
 router.get('/:userId', getUserInfoById);
 
 module.exports = router;

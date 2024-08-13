@@ -15,19 +15,19 @@ const getCommentById = async (commentId) => {
   }
 };
 
-const getCommentByChapterId = async (chapterId) => {
-  try {
-    const [commentsInfo] = await pool.query(
-      'SELECT * FROM comments WHERE chapter_id = ?',
-      [chapterId]
-    );
+// const getCommentByChapterId = async (chapterId) => {
+//   try {
+//     const [commentsInfo] = await pool.query(
+//       'SELECT * FROM comments WHERE chapter_id = ?',
+//       [chapterId]
+//     );
 
-    return commentsInfo.length > 0 ? convertToCamelCase(commentsInfo[0]) : {};
-  } catch (error) {
-    console.log('Error: ', error);
-    return {};
-  }
-};
+//     return commentsInfo.length > 0 ? convertToCamelCase(commentsInfo[0]) : {};
+//   } catch (error) {
+//     console.log('Error: ', error);
+//     return {};
+//   }
+// };
 
 const createComment = async (content, comicId, userId) => {
   try {
@@ -35,12 +35,17 @@ const createComment = async (content, comicId, userId) => {
       'INSERT INTO comments (content, comic_id, user_id) values(?, ?, ?)',
       [content, comicId, userId]
     );
+
+    if (result.affectedRows === 0) {
+      return { success: false };
+    }
+
     const newCommentId = result.insertId;
 
-    return newCommentId;
+    return { success: true, newCommentId: newCommentId };
   } catch (error) {
     console.log('Error: ', error);
-    return {};
+    return { success: false };
   }
 };
 
@@ -50,12 +55,17 @@ const createReplyComment = async (content, comicId, parentId, userId) => {
       'INSERT INTO comments (content, comic_id, parent_id, user_id) values(?, ?, ?, ?)',
       [content, comicId, parentId, userId]
     );
+
+    if (result.affectedRows === 0) {
+      return { success: false };
+    }
+
     const newReplyId = result.insertId;
 
-    return newReplyId;
+    return { success: true, newReplyId: newReplyId };
   } catch (error) {
     console.log('Error: ', error);
-    return {};
+    return { success: false };
   }
 };
 
@@ -140,7 +150,7 @@ const getLikesByCommentId = async (commentId) => {
     return likes.length > 0 ? convertToCamelCase(likes) : [];
   } catch (error) {
     console.log('Error: ', error);
-    return 0;
+    return [];
   }
 };
 
@@ -154,49 +164,57 @@ const getDislikesByCommentId = async (commentId) => {
     return dislikes.length > 0 ? convertToCamelCase(dislikes) : [];
   } catch (error) {
     console.log('Error: ', error);
-    return 0;
+    return [];
   }
 };
 
 const createLikeDislike = async (commentId, userId, likeDislike) => {
   try {
-    await pool.query(
+    const [result] = await pool.query(
       'INSERT INTO likes_dislikes_comment (comment_id, user_id, like_dislike) values(?, ?, ?)',
       [commentId, userId, likeDislike]
     );
 
-    return true;
+    if (result.affectedRows === 0) {
+      return { success: false };
+    }
+
+    return { success: true };
   } catch (error) {
     console.log('Error: ', error);
-    return false;
+    return { success: false };
   }
 };
 
 const deleteLikeDislike = async (commentId, userId) => {
   try {
-    await pool.query(
+    const [result] = await pool.query(
       'DELETE FROM likes_dislikes_comment WHERE comment_id = ? AND user_id = ?',
       [commentId, userId]
     );
 
-    return true;
+    return { success: true };
   } catch (error) {
     console.log('Error: ', error);
-    return false;
+    return { success: false };
   }
 };
 
 const updateLikeDislike = async (commentId, userId, likeDislike) => {
   try {
-    await pool.query(
+    const [result] = await pool.query(
       'UPDATE likes_dislikes_comment SET like_dislike = ? WHERE comment_id = ? AND user_id = ?',
       [likeDislike, commentId, userId]
     );
 
-    return true;
+    if (result.affectedRows === 0) {
+      return { success: false };
+    }
+
+    return { success: true };
   } catch (error) {
     console.log('Error: ', error);
-    return false;
+    return { success: false };
   }
 };
 
@@ -208,7 +226,7 @@ module.exports = {
   deleteLikeDislike,
   createReplyComment,
   getLikesByCommentId,
-  getCommentByChapterId,
+  // getCommentByChapterId,
   getDislikesByCommentId,
   getAllCommentsByComicId,
 };

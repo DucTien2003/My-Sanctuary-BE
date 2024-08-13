@@ -1,5 +1,5 @@
-const bucket = require('./bucket');
-const object = require('./object');
+const bucket = require('./bucketServices');
+const object = require('./objectServices');
 
 module.exports = {
   ...bucket,

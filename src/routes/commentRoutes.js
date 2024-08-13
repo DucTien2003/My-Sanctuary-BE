@@ -12,7 +12,8 @@ const {
 
 const router = express.Router();
 
-router.post('', authenticateToken, handleComment);
+router.post('/', authenticateToken, handleComment);
+
 router.get('/comic-comments/:comicId', handleGetAllCommentsByComicId);
 router.post('/reply-comment/:parentId', authenticateToken, handleReplyComment);
 router.post(
