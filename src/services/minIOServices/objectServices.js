@@ -1,7 +1,7 @@
-const path = require('path');
+const path = require("path");
 
-const { minioClient } = require('../../config/minIO');
-const { getListChapters } = require('./bucketServices');
+const { minioClient } = require("../../config/minIO");
+const { getListChapters } = require("./bucketServices");
 
 // Check exists of a chapter
 const chapterExists = async (bucketName, chapterName) => {
@@ -20,7 +20,7 @@ const imageExists = async (bucketName, objectName) => {
     await minioClient.statObject(bucketName, objectName);
     return true;
   } catch (error) {
-    if (error.code === 'NotFound') {
+    if (error.code === "NotFound") {
       return false;
     }
     throw error;
@@ -33,7 +33,7 @@ const uploadImage = async (bucketName, objectName, imageFile) => {
     const port = process.env.MIO_PORT;
     const domain = process.env.MIO_DOMAIN;
     const metaData = {
-      'Content-Type': imageFile.mimetype,
+      "Content-Type": imageFile.mimetype,
     };
 
     const result = await minioClient.putObject(
@@ -43,7 +43,7 @@ const uploadImage = async (bucketName, objectName, imageFile) => {
       metaData,
       (err, etag) => {
         if (err) {
-          console.log('Error uploadImage: ', err);
+          console.log("Error uploadImage: ", err);
           throw err;
         } else {
           const fileUrl = `${domain}:${port}/${bucketName}/${objectName}`;
@@ -55,7 +55,7 @@ const uploadImage = async (bucketName, objectName, imageFile) => {
 
     return result;
   } catch (err) {
-    console.log('Error uploadImage: ', err);
+    console.log("Error uploadImage: ", err);
     return { success: false, error: err };
   }
 };
@@ -66,7 +66,7 @@ const removeImage = async (bucketName, objectName) => {
     await minioClient.removeObject(bucketName, objectName);
     return { success: true };
   } catch (err) {
-    console.log('Error removeImage: ', err);
+    console.log("Error removeImage: ", err);
     return { success: false, error: err };
   }
 };
@@ -82,16 +82,16 @@ const removeChapter = async (bucketName, chapterName) => {
       true
     );
 
-    objectsStream.on('data', function (obj) {
+    objectsStream.on("data", function (obj) {
       objectsList.push(obj.name);
     });
 
-    objectsStream.on('error', function (e) {
+    objectsStream.on("error", function (e) {
       console.log(e);
       reject({ success: false, error: e });
     });
 
-    objectsStream.on('end', function () {
+    objectsStream.on("end", function () {
       minioClient.removeObjects(bucketName, objectsList, function (err) {
         if (err) {
           reject({ success: false, error: err });

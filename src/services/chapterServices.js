@@ -1,5 +1,5 @@
-const pool = require('../config/database');
-const { convertToCamelCase } = require('../utils');
+const pool = require("../config/database");
+const { convertToCamelCase } = require("../utils");
 
 const getImagesByChapterId = async (chapterId) => {
   try {
@@ -10,7 +10,7 @@ const getImagesByChapterId = async (chapterId) => {
 
     return images.length > 0 ? convertToCamelCase(images) : [];
   } catch (error) {
-    console.log('Error getImagesByChapterId: ', error);
+    console.log("Error getImagesByChapterId: ", error);
     return [];
   }
 };
@@ -18,7 +18,7 @@ const getImagesByChapterId = async (chapterId) => {
 const createImages = async (imagesInfo) => {
   const query =
     `INSERT INTO images (\`index\`, url, chapter_id) VALUES ` +
-    imagesInfo.map(() => '(?, ?, ?)').join(', ');
+    imagesInfo.map(() => "(?, ?, ?)").join(", ");
 
   try {
     const [result] = await pool.query(
@@ -38,7 +38,7 @@ const createImages = async (imagesInfo) => {
 
     return { success: true };
   } catch (error) {
-    console.log('Error createImage: ', error);
+    console.log("Error createImage: ", error);
     return { success: false };
   }
 };
@@ -52,7 +52,7 @@ const deleteImagesByChapterId = async (chapterId) => {
 
     return { success: true };
   } catch (error) {
-    console.log('Error deleteImagesByChapterId: ', error);
+    console.log("Error deleteImagesByChapterId: ", error);
     return { success: false };
   }
 };
@@ -60,13 +60,13 @@ const deleteImagesByChapterId = async (chapterId) => {
 const getChapterById = async (chapterId) => {
   try {
     const [chapterInfo] = await pool.query(
-      'SELECT * FROM chapters WHERE id = ?',
+      "SELECT * FROM chapters WHERE id = ?",
       [chapterId]
     );
 
     return chapterInfo.length > 0 ? convertToCamelCase(chapterInfo[0]) : {};
   } catch (error) {
-    console.log('Error getChapterById: ', error);
+    console.log("Error getChapterById: ", error);
     return {};
   }
 };
@@ -89,7 +89,7 @@ const createChapter = async (chapterInfo) => {
 
     return { success: true, insertId: result.insertId };
   } catch (error) {
-    console.log('Error createChapter: ', error);
+    console.log("Error createChapter: ", error);
     return { success: false };
   }
 };
@@ -112,7 +112,7 @@ const updateChapterByChapterId = async (chapterInfo) => {
 
     return { success: true };
   } catch (error) {
-    console.log('Error updateChapterByChapterId: ', error);
+    console.log("Error updateChapterByChapterId: ", error);
     return { success: false };
   }
 };
@@ -125,7 +125,7 @@ const deleteChapterByChapterId = async (chapterId) => {
 
     return { success: true };
   } catch (error) {
-    console.log('Error deleteChapterByChapterId: ', error);
+    console.log("Error deleteChapterByChapterId: ", error);
     return { success: false };
   }
 };
@@ -135,7 +135,7 @@ const getChaptersByIds = async (chapterIds) => {
     return [];
   }
 
-  const placeholders = chapterIds.map(() => '?').join(', ');
+  const placeholders = chapterIds.map(() => "?").join(", ");
   try {
     const [chaptersInfo] = await pool.query(
       `SELECT * FROM chapters WHERE id IN (${placeholders})`,
@@ -144,7 +144,7 @@ const getChaptersByIds = async (chapterIds) => {
 
     return chaptersInfo.length > 0 ? convertToCamelCase(chaptersInfo) : [];
   } catch (error) {
-    console.log('Error getChaptersByIds: ', error);
+    console.log("Error getChaptersByIds: ", error);
     return [];
   }
 };
@@ -158,7 +158,7 @@ const getAllChaptersByComicId = async (comicId) => {
 
     return convertToCamelCase(allChapters);
   } catch (error) {
-    console.log('Error getAllChaptersByComicId: ', error);
+    console.log("Error getAllChaptersByComicId: ", error);
     return [];
   }
 };
@@ -172,7 +172,7 @@ const updateChapterViews = async (chapterId) => {
 
     return updateResult.affectedRows > 0;
   } catch (error) {
-    console.log('Error updateChapterViews: ', error);
+    console.log("Error updateChapterViews: ", error);
     return false;
   }
 };
@@ -186,7 +186,7 @@ const checkChapterIndexExists = async (comicId, index) => {
 
     return chapterInfo.length > 0;
   } catch (error) {
-    console.log('Error checkChapterExists: ', error);
+    console.log("Error checkChapterExists: ", error);
     return false;
   }
 };
@@ -200,7 +200,7 @@ const checkChapterExistsByComicId = async (comicId) => {
 
     return chaptersInfo.length > 0;
   } catch (error) {
-    console.log('Error checkChapterExistsByComicId: ', error);
+    console.log("Error checkChapterExistsByComicId: ", error);
     return false;
   }
 };
@@ -208,13 +208,13 @@ const checkChapterExistsByComicId = async (comicId) => {
 const getLatestChapter = async (comicId) => {
   try {
     const [chapterInfo] = await pool.query(
-      'SELECT * FROM chapters WHERE comic_id = ? ORDER BY `index` DESC LIMIT 1',
+      "SELECT * FROM chapters WHERE comic_id = ? ORDER BY `index` DESC LIMIT 1",
       [comicId]
     );
 
     return chapterInfo.length > 0 ? convertToCamelCase(chapterInfo[0]) : {};
   } catch (error) {
-    console.log('Error checkChapterExistsByComicId: ', error);
+    console.log("Error checkChapterExistsByComicId: ", error);
     return {};
   }
 };

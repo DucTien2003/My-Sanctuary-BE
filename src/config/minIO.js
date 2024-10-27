@@ -1,4 +1,4 @@
-const Minio = require('minio');
+const Minio = require("minio");
 
 const minioClient = new Minio.Client({
   endPoint: process.env.MIO_END_POINT,
@@ -10,14 +10,14 @@ const minioClient = new Minio.Client({
 
 const policyMinio = (bucketName) => {
   return {
-    Version: '2012-10-17',
+    Version: "2012-10-17",
     Statement: [
       {
-        Effect: 'Allow',
+        Effect: "Allow",
         Principal: {
-          AWS: ['*'],
+          AWS: ["*"],
         },
-        Action: ['s3:GetObject'],
+        Action: ["s3:GetObject"],
         Resource: [`arn:aws:s3:::${bucketName}/*`],
       },
     ],

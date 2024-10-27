@@ -1,16 +1,16 @@
-const pool = require('../config/database');
-const { convertToCamelCase } = require('../utils');
+const pool = require("../config/database");
+const { convertToCamelCase } = require("../utils");
 
 const getCommentById = async (commentId) => {
   try {
     const [commentsInfo] = await pool.query(
-      'SELECT * FROM comments WHERE id = ?',
+      "SELECT * FROM comments WHERE id = ?",
       [commentId]
     );
 
     return commentsInfo.length > 0 ? convertToCamelCase(commentsInfo[0]) : {};
   } catch (error) {
-    console.log('Error: ', error);
+    console.log("Error: ", error);
     return {};
   }
 };
@@ -32,7 +32,7 @@ const getCommentById = async (commentId) => {
 const createComment = async (content, comicId, userId) => {
   try {
     const [result] = await pool.query(
-      'INSERT INTO comments (content, comic_id, user_id) values(?, ?, ?)',
+      "INSERT INTO comments (content, comic_id, user_id) values(?, ?, ?)",
       [content, comicId, userId]
     );
 
@@ -44,7 +44,7 @@ const createComment = async (content, comicId, userId) => {
 
     return { success: true, newCommentId: newCommentId };
   } catch (error) {
-    console.log('Error: ', error);
+    console.log("Error: ", error);
     return { success: false };
   }
 };
@@ -52,7 +52,7 @@ const createComment = async (content, comicId, userId) => {
 const createReplyComment = async (content, comicId, parentId, userId) => {
   try {
     const [result] = await pool.query(
-      'INSERT INTO comments (content, comic_id, parent_id, user_id) values(?, ?, ?, ?)',
+      "INSERT INTO comments (content, comic_id, parent_id, user_id) values(?, ?, ?, ?)",
       [content, comicId, parentId, userId]
     );
 
@@ -64,7 +64,7 @@ const createReplyComment = async (content, comicId, parentId, userId) => {
 
     return { success: true, newReplyId: newReplyId };
   } catch (error) {
-    console.log('Error: ', error);
+    console.log("Error: ", error);
     return { success: false };
   }
 };
@@ -135,7 +135,7 @@ const getAllCommentsByComicId = async (comicId) => {
 
     return convertToCamelCase(allStandardComments);
   } catch (error) {
-    console.log('Error: ', error);
+    console.log("Error: ", error);
     return [];
   }
 };
@@ -143,13 +143,13 @@ const getAllCommentsByComicId = async (comicId) => {
 const getLikesByCommentId = async (commentId) => {
   try {
     const [likes] = await pool.query(
-      'SELECT * FROM likes_dislikes_comment WHERE comment_id = ? AND like_dislike = 1',
+      "SELECT * FROM likes_dislikes_comment WHERE comment_id = ? AND like_dislike = 1",
       [commentId]
     );
 
     return likes.length > 0 ? convertToCamelCase(likes) : [];
   } catch (error) {
-    console.log('Error: ', error);
+    console.log("Error: ", error);
     return [];
   }
 };
@@ -157,13 +157,13 @@ const getLikesByCommentId = async (commentId) => {
 const getDislikesByCommentId = async (commentId) => {
   try {
     const [dislikes] = await pool.query(
-      'SELECT * FROM likes_dislikes_comment WHERE comment_id = ? AND like_dislike = 0',
+      "SELECT * FROM likes_dislikes_comment WHERE comment_id = ? AND like_dislike = 0",
       [commentId]
     );
 
     return dislikes.length > 0 ? convertToCamelCase(dislikes) : [];
   } catch (error) {
-    console.log('Error: ', error);
+    console.log("Error: ", error);
     return [];
   }
 };
@@ -171,7 +171,7 @@ const getDislikesByCommentId = async (commentId) => {
 const createLikeDislike = async (commentId, userId, likeDislike) => {
   try {
     const [result] = await pool.query(
-      'INSERT INTO likes_dislikes_comment (comment_id, user_id, like_dislike) values(?, ?, ?)',
+      "INSERT INTO likes_dislikes_comment (comment_id, user_id, like_dislike) values(?, ?, ?)",
       [commentId, userId, likeDislike]
     );
 
@@ -181,7 +181,7 @@ const createLikeDislike = async (commentId, userId, likeDislike) => {
 
     return { success: true };
   } catch (error) {
-    console.log('Error: ', error);
+    console.log("Error: ", error);
     return { success: false };
   }
 };
@@ -189,13 +189,13 @@ const createLikeDislike = async (commentId, userId, likeDislike) => {
 const deleteLikeDislike = async (commentId, userId) => {
   try {
     const [result] = await pool.query(
-      'DELETE FROM likes_dislikes_comment WHERE comment_id = ? AND user_id = ?',
+      "DELETE FROM likes_dislikes_comment WHERE comment_id = ? AND user_id = ?",
       [commentId, userId]
     );
 
     return { success: true };
   } catch (error) {
-    console.log('Error: ', error);
+    console.log("Error: ", error);
     return { success: false };
   }
 };
@@ -203,7 +203,7 @@ const deleteLikeDislike = async (commentId, userId) => {
 const updateLikeDislike = async (commentId, userId, likeDislike) => {
   try {
     const [result] = await pool.query(
-      'UPDATE likes_dislikes_comment SET like_dislike = ? WHERE comment_id = ? AND user_id = ?',
+      "UPDATE likes_dislikes_comment SET like_dislike = ? WHERE comment_id = ? AND user_id = ?",
       [likeDislike, commentId, userId]
     );
 
@@ -213,7 +213,7 @@ const updateLikeDislike = async (commentId, userId, likeDislike) => {
 
     return { success: true };
   } catch (error) {
-    console.log('Error: ', error);
+    console.log("Error: ", error);
     return { success: false };
   }
 };

@@ -1,4 +1,4 @@
-const { uploadImage, removeChapter } = require('../services/minIOServices');
+const { uploadImage, removeChapter } = require("../services/minIOServices");
 
 const {
   createImages,
@@ -11,7 +11,7 @@ const {
   getAllChaptersByComicId,
   updateChapterByChapterId,
   deleteChapterByChapterId,
-} = require('../services/chapterServices');
+} = require("../services/chapterServices");
 
 const handleGetImagesOfChapter = async (req, res) => {
   const chapterId = req.params.chapterId;
@@ -21,7 +21,7 @@ const handleGetImagesOfChapter = async (req, res) => {
       return res.json(images);
     })
     .catch((error) => {
-      console.log('Error handleGetImagesOfChapter: ', error);
+      console.log("Error handleGetImagesOfChapter: ", error);
       return res.status(500).json([]);
     });
 };
@@ -34,7 +34,7 @@ const handleGetChapterById = async (req, res) => {
       return res.json(chapters);
     })
     .catch((error) => {
-      console.log('Error handleGetChapterById: ', error);
+      console.log("Error handleGetChapterById: ", error);
       return res.status(500).json({});
     });
 };
@@ -47,7 +47,7 @@ const handleGetAllChaptersByComicId = async (req, res) => {
       return res.json(chapters);
     })
     .catch((error) => {
-      console.log('Error handleGetAllChaptersByComicId: ', error);
+      console.log("Error handleGetAllChaptersByComicId: ", error);
       return res.status(500).json([]);
     });
 };
@@ -60,7 +60,7 @@ const handleUpdateChapterViews = async (req, res) => {
       return res.json(result);
     })
     .catch((error) => {
-      console.log('Error handleUpdateChapterViews: ', error);
+      console.log("Error handleUpdateChapterViews: ", error);
       return res.status(500).json(false);
     });
 };
@@ -69,14 +69,14 @@ const handleCreateChapter = async (req, res) => {
   const imageFiles = req.files;
   const { index, name } = req.body;
   const comicInfo = JSON.parse(req.body.comicInfo);
-  const chapterNameMinio = 'chapter-' + index;
+  const chapterNameMinio = "chapter-" + index;
 
   const chapterIndexExists = await checkChapterIndexExists(comicInfo.id, index);
 
   if (chapterIndexExists) {
     return res.json({
       success: false,
-      error: 'Chapter index exists',
+      error: "Chapter index exists",
       isExists: true,
     });
   }
@@ -122,7 +122,7 @@ const handleCreateChapter = async (req, res) => {
       return res.json({ success: false });
     }
   } catch (error) {
-    console.log('Error handleCreateChapter: ', error);
+    console.log("Error handleCreateChapter: ", error);
     return res.json({ success: false });
   }
 };
@@ -142,14 +142,14 @@ const handleUpdateChapter = async (req, res) => {
     if (chapterIndexExists) {
       return res.json({
         success: false,
-        error: 'Chapter index exists',
+        error: "Chapter index exists",
         isExists: true,
       });
     }
   }
 
   try {
-    const oldChapterNameMinio = 'chapter-' + oldIndex;
+    const oldChapterNameMinio = "chapter-" + oldIndex;
     const [removeChapterMinioResult, deleteImagesResult] = await Promise.all([
       removeChapter(comicInfo.nameMinio, oldChapterNameMinio),
       deleteImagesByChapterId(chapterId),
@@ -159,7 +159,7 @@ const handleUpdateChapter = async (req, res) => {
       return res.json({ success: false });
     }
 
-    const chapterNameMinio = 'chapter-' + index;
+    const chapterNameMinio = "chapter-" + index;
     const imagesInfo = [];
 
     const uploadImagePromises = imageFiles.map(async (imageFile, index) => {
@@ -197,7 +197,7 @@ const handleUpdateChapter = async (req, res) => {
       return res.json({ success: false });
     }
   } catch (error) {
-    console.log('Error handleUpdateChapter: ', error);
+    console.log("Error handleUpdateChapter: ", error);
     return res.json({ success: false });
   }
 };
@@ -225,7 +225,7 @@ const handleDeleteChapterById = async (req, res) => {
 
     return res.json({ success: false });
   } catch (error) {
-    console.log('Error handleDeleteChapterById: ', error);
+    console.log("Error handleDeleteChapterById: ", error);
     return res.json({ success: false });
   }
 };

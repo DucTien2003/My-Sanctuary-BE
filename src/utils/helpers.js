@@ -1,4 +1,4 @@
-const _ = require('lodash');
+const _ = require("lodash");
 
 const convertToCamelCase = (obj) => {
   if (_.isArray(obj)) {
@@ -11,20 +11,20 @@ const convertToCamelCase = (obj) => {
 
 // Add zero
 const addZero = (number) => {
-  return number < 10 ? '0' + number : number;
+  return number < 10 ? "0" + number : number;
 };
 
 const showQuantity = (number) => {
-  return number >= 1000 ? (number / 1000).toFixed(1) + 'k' : number;
+  return number >= 1000 ? (number / 1000).toFixed(1) + "k" : number;
 };
 
 const isEmpty = (value) => {
   return (
     value === null || // check for null
     value === undefined || // check for undefined
-    value === '' || // check for empty string
+    value === "" || // check for empty string
     (Array.isArray(value) && value.length === 0) || // check for empty array
-    (typeof value === 'object' && Object.keys(value).length === 0) // check for empty object
+    (typeof value === "object" && Object.keys(value).length === 0) // check for empty object
   );
 };
 
@@ -32,8 +32,8 @@ const isEmpty = (value) => {
 const sortByLastNumber = (arr, ascending = false) => {
   return arr.sort((a, b) => {
     // Split the string by spaces and get the last element
-    const numA = parseFloat(a.split(' ').pop());
-    const numB = parseFloat(b.split(' ').pop());
+    const numA = parseFloat(a.split(" ").pop());
+    const numB = parseFloat(b.split(" ").pop());
 
     return ascending ? numB - numA : numA - numB;
   });
@@ -41,14 +41,14 @@ const sortByLastNumber = (arr, ascending = false) => {
 
 // Remove slash at the end of string
 const removeEndSlash = (str) => {
-  return str.replace(/\/+$/, '');
+  return str.replace(/\/+$/, "");
 };
 
 // Reformat path
 const formatPath = (path) => {
   return path
-    .replace(/[^a-zA-Z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .replace(/[^a-zA-Z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
     .toLowerCase();
 };
 

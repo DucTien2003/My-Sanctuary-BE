@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const { getUserById, getUsersByIds } = require('../services/userServices');
+const jwt = require("jsonwebtoken");
+const { getUserById, getUsersByIds } = require("../services/userServices");
 
-const { getChaptersByIds } = require('../services/chapterServices');
+const { getChaptersByIds } = require("../services/chapterServices");
 
 const {
   createComment,
@@ -13,7 +13,7 @@ const {
   getLikesByCommentId,
   getDislikesByCommentId,
   getAllCommentsByComicId,
-} = require('../services/commentServices');
+} = require("../services/commentServices");
 
 const handleComment = async (req, res) => {
   const userId = req.id;
@@ -25,7 +25,7 @@ const handleComment = async (req, res) => {
       const [resultCreateComment, userInfo] = values;
 
       if (!resultCreateComment.success) {
-        return res.status(500).json({ message: 'Error when create comment' });
+        return res.status(500).json({ message: "Error when create comment" });
       }
 
       const commentInfo = await getCommentById(
@@ -34,7 +34,7 @@ const handleComment = async (req, res) => {
       return res.json({ ...commentInfo, user: userInfo });
     })
     .catch((error) => {
-      console.log('Error: ', error);
+      console.log("Error: ", error);
       return res.status(500).json({});
     });
 };
@@ -52,14 +52,14 @@ const handleReplyComment = async (req, res) => {
     .then(async (values) => {
       const [resultCreateReply, userInfo] = values;
       if (!resultCreateReply.success) {
-        return res.status(500).json({ message: 'Error when create reply' });
+        return res.status(500).json({ message: "Error when create reply" });
       }
 
       const commentInfo = await getCommentById(resultCreateReply.newCommentId);
       return res.json({ ...commentInfo, user: userInfo });
     })
     .catch((error) => {
-      console.log('Error: ', error);
+      console.log("Error: ", error);
       return res.status(500).json({});
     });
 };
@@ -153,7 +153,7 @@ const handleGetAllCommentsByComicId = async (req, res) => {
 
     return res.json(listComments);
   } catch (error) {
-    console.log('Error handleGetAllCommentsByComicId: ', error);
+    console.log("Error handleGetAllCommentsByComicId: ", error);
     return res.status(500).json([]);
   }
 };
@@ -167,7 +167,7 @@ const handleLikeDislike = async (req, res) => {
     const result = await createLikeDislike(commentId, userId, likeDislike);
     return res.json(result);
   } catch (error) {
-    console.log('Error handleLikeDislike: ', error);
+    console.log("Error handleLikeDislike: ", error);
     return res.status(500).json({});
   }
 };
@@ -181,7 +181,7 @@ const handleUpdateLikeDislike = async (req, res) => {
     const result = await updateLikeDislike(commentId, userId, likeDislike);
     return res.json(result);
   } catch (error) {
-    console.log('Error handleUpdateLikeDislike: ', error);
+    console.log("Error handleUpdateLikeDislike: ", error);
     return res.status(500).json({});
   }
 };
@@ -194,7 +194,7 @@ const handleDeleteLikeDislike = async (req, res) => {
     const result = await deleteLikeDislike(commentId, userId);
     return res.json(result);
   } catch (result) {
-    console.log('Error handleDeleteLikeDislike: ', error);
+    console.log("Error handleDeleteLikeDislike: ", error);
     return res.status(500).json({});
   }
 };

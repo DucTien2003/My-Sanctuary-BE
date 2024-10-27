@@ -1,8 +1,8 @@
-const { isEmpty, formatPath } = require('../utils');
+const { isEmpty, formatPath } = require("../utils");
 const {
   getLatestChapter,
   checkChapterExistsByComicId,
-} = require('../services/chapterServices');
+} = require("../services/chapterServices");
 const {
   imageExists,
   uploadImage,
@@ -10,7 +10,7 @@ const {
   createBucket,
   renameBucket,
   removeBucket,
-} = require('../services/minIOServices');
+} = require("../services/minIOServices");
 const {
   createComic,
   updateComic,
@@ -30,7 +30,7 @@ const {
   deleteComicByComicId,
   getComicRatingByUserId,
   getComicBookmarkByUserId,
-} = require('../services/comicServices.js');
+} = require("../services/comicServices.js");
 
 const handleGetComicById = async (req, res) => {
   const authId = req.id;
@@ -53,7 +53,7 @@ const handleGetComicById = async (req, res) => {
       });
     })
     .catch((error) => {
-      console.log('Error handleGetComicById: ', error);
+      console.log("Error handleGetComicById: ", error);
       return res.status(500).json({});
     });
 };
@@ -66,7 +66,7 @@ const handleGetComicsByAuthId = async (req, res) => {
       return res.json(comics);
     })
     .catch((error) => {
-      console.log('Error handleGetComicByUserId: ', error);
+      console.log("Error handleGetComicByUserId: ", error);
       return res.status(500).json([]);
     });
 };
@@ -81,7 +81,7 @@ const handleCreateComicRating = async (req, res) => {
       return res.json(result);
     })
     .catch((error) => {
-      console.log('Error handleCreateComicRating: ', error);
+      console.log("Error handleCreateComicRating: ", error);
       return res.status(500).json({});
     });
 };
@@ -96,7 +96,7 @@ const handleUpdateComicRating = async (req, res) => {
       return res.json(result);
     })
     .catch((error) => {
-      console.log('Error handleUpdateComicRating: ', error);
+      console.log("Error handleUpdateComicRating: ", error);
       return res.status(500).json({});
     });
 };
@@ -110,7 +110,7 @@ const handleDeleteComicRating = async (req, res) => {
       return res.json(result);
     })
     .catch((error) => {
-      console.log('Error handleDeleteComicRating: ', error);
+      console.log("Error handleDeleteComicRating: ", error);
       return res.status(500).json({});
     });
 };
@@ -124,7 +124,7 @@ const handleCreateComicBookmark = async (req, res) => {
       return res.json(result);
     })
     .catch((error) => {
-      console.log('Error handleCreateComicBookmark: ', error);
+      console.log("Error handleCreateComicBookmark: ", error);
       return res.status(500).json({});
     });
 };
@@ -138,7 +138,7 @@ const handleDeleteComicBookmark = async (req, res) => {
       return res.json(result);
     })
     .catch((error) => {
-      console.log('Error: ', error);
+      console.log("Error: ", error);
       return res.status(500).json({});
     });
 };
@@ -149,14 +149,14 @@ const handleGetAllGenres = async (req, res) => {
       return res.json(genres);
     })
     .catch((error) => {
-      console.log('Error handleGetAllGenres: ', error);
+      console.log("Error handleGetAllGenres: ", error);
       return res.status(500).json([]);
     });
 };
 
 const handleCreateComic = async (req, res) => {
   if (!req.files || req.files.length === 0) {
-    return res.status(400).send('No files uploaded.');
+    return res.status(400).send("No files uploaded.");
   }
 
   const userId = req.id;
@@ -165,7 +165,7 @@ const handleCreateComic = async (req, res) => {
   const { name, author, status, subName, translator, description } = req.body;
 
   let nameMinio = formatPath(name);
-  const coverBucket = 'covers';
+  const coverBucket = "covers";
 
   try {
     const nameOrigin = nameMinio;
@@ -197,7 +197,7 @@ const handleCreateComic = async (req, res) => {
 
       const resultCreateComic = await createComic(comic);
       if (!resultCreateComic.success) {
-        return res.status(500).json({ message: 'Create comic failed' });
+        return res.status(500).json({ message: "Create comic failed" });
       }
 
       const result = await createGenresComics(
@@ -210,14 +210,14 @@ const handleCreateComic = async (req, res) => {
       }
     }
   } catch (error) {
-    console.log('Error handleCreateComic: ', error);
+    console.log("Error handleCreateComic: ", error);
     return res.status(500).json({});
   }
 };
 
 const handleUpdateComicById = async (req, res) => {
   if (!req.files || req.files.length === 0) {
-    return res.status(400).send('No files uploaded.');
+    return res.status(400).send("No files uploaded.");
   }
 
   const comicId = req.params.comicId;
@@ -226,12 +226,12 @@ const handleUpdateComicById = async (req, res) => {
   const oldComicInfo = JSON.parse(req.body.oldComicInfo);
   const { name, author, status, subName, translator, description } = req.body;
 
-  let coverUrl = '';
+  let coverUrl = "";
   let nameMinio = formatPath(name);
-  const coverBucket = 'covers';
+  const coverBucket = "covers";
 
   try {
-    const oldCoverName = oldComicInfo.cover.split('/').pop();
+    const oldCoverName = oldComicInfo.cover.split("/").pop();
     const removeImageResult = await removeImage(coverBucket, oldCoverName);
 
     if (!removeImageResult.success) {
@@ -286,7 +286,7 @@ const handleUpdateComicById = async (req, res) => {
       }
     }
   } catch (error) {
-    console.log('Error handleUpdateComic: ', error);
+    console.log("Error handleUpdateComic: ", error);
     return res.status(500).json({});
   }
 };
@@ -297,14 +297,14 @@ const handleDeleteComicById = async (req, res) => {
   const isStillChapterExists = await checkChapterExistsByComicId(comicId);
 
   if (isStillChapterExists) {
-    return res.status(400).json({ message: 'Still have chapter exists' });
+    return res.status(400).json({ message: "Still have chapter exists" });
   }
 
   try {
     const [comicInfo] = await Promise.all([getComicById(comicId)]);
 
-    const coverBucket = 'covers';
-    const coverName = comicInfo.cover.split('/').pop();
+    const coverBucket = "covers";
+    const coverName = comicInfo.cover.split("/").pop();
 
     const [deleteGenresComicsResult] = await Promise.all([
       deleteGenresComics(comicId),
@@ -327,7 +327,7 @@ const handleDeleteComicById = async (req, res) => {
       }
     }
   } catch (error) {
-    console.log('Error handleDeleteComicById: ', error);
+    console.log("Error handleDeleteComicById: ", error);
     return res.status(500).json({});
   }
 };
@@ -353,7 +353,7 @@ const handleGetListComics = async (req, res) => {
       return res.json(comicsWithLatestChapter);
     })
     .catch((error) => {
-      console.log('Error handleGetListComics: ', error);
+      console.log("Error handleGetListComics: ", error);
       return res.status(500).json([]);
     });
 };

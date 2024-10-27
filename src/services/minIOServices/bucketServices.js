@@ -1,11 +1,11 @@
-const { minioClient, policyMinio } = require('../../config/minIO');
-const { sortByLastNumber, removeEndSlash } = require('../../utils');
+const { minioClient, policyMinio } = require("../../config/minIO");
+const { sortByLastNumber, removeEndSlash } = require("../../utils");
 
 // Create a bucket
 const createBucket = async (bucketName) => {
   try {
     await new Promise((resolve, reject) => {
-      minioClient.makeBucket(bucketName, 'us-east-1', function (err) {
+      minioClient.makeBucket(bucketName, "us-east-1", function (err) {
         if (err) {
           reject(err);
         } else {
@@ -36,7 +36,7 @@ const listBuckets = async () => {
     const buckets = await minioClient.listBuckets();
     return { success: true, buckets };
   } catch (err) {
-    console.error('Error listing buckets:', err);
+    console.error("Error listing buckets:", err);
     return { success: false, error: err };
   }
 };
@@ -64,7 +64,7 @@ const removeBucket = async (bucketName) => {
 };
 
 // List chapters in a comic
-const getListChapters = async (bucketName, prefix = '', recursive = false) => {
+const getListChapters = async (bucketName, prefix = "", recursive = false) => {
   try {
     const chapters = [];
     const stream = minioClient.listObjects(bucketName, prefix, recursive);
@@ -79,13 +79,13 @@ const getListChapters = async (bucketName, prefix = '', recursive = false) => {
 
     return { success: true, list: sortByLastNumber(chapterNames, true) };
   } catch (err) {
-    console.error('Error listing chapters:', err);
+    console.error("Error listing chapters:", err);
     return { success: false, error: err };
   }
 };
 
 // List objects in a bucket using listObjectsV2
-const listObjectsV2 = async (bucketName, prefix = '', recursive = false) => {
+const listObjectsV2 = async (bucketName, prefix = "", recursive = false) => {
   try {
     const objects = [];
     const stream = minioClient.listObjectsV2(bucketName, prefix, recursive);
@@ -96,7 +96,7 @@ const listObjectsV2 = async (bucketName, prefix = '', recursive = false) => {
 
     return { success: true, list: objects };
   } catch (err) {
-    console.error('Error listing objects V2:', err);
+    console.error("Error listing objects V2:", err);
     return { success: false, error: err };
   }
 };
@@ -106,10 +106,10 @@ const renameBucket = async (oldName, newName) => {
   try {
     await createBucket(newName);
 
-    const objectsStream = minioClient.listObjectsV2(oldName, '', true);
+    const objectsStream = minioClient.listObjectsV2(oldName, "", true);
     const copyPromises = [];
 
-    objectsStream.on('data', (obj) => {
+    objectsStream.on("data", (obj) => {
       const copyPromise = minioClient.copyObject(
         newName,
         obj.name,
@@ -118,25 +118,25 @@ const renameBucket = async (oldName, newName) => {
       copyPromises.push(copyPromise);
     });
 
-    objectsStream.on('end', async () => {
+    objectsStream.on("end", async () => {
       try {
         await Promise.all(copyPromises);
 
-        const deleteStream = minioClient.listObjectsV2(oldName, '', true);
+        const deleteStream = minioClient.listObjectsV2(oldName, "", true);
         const objectsList = [];
 
-        deleteStream.on('data', (obj) => {
+        deleteStream.on("data", (obj) => {
           objectsList.push(obj.name);
         });
 
-        deleteStream.on('end', async () => {
+        deleteStream.on("end", async () => {
           await minioClient.removeObjects(oldName, objectsList);
 
           await minioClient.removeBucket(oldName);
           console.log(`Bucket ${oldName} renamed to ${newName}`);
         });
       } catch (err) {
-        console.error('Error during copy or delete operation:', err);
+        console.error("Error during copy or delete operation:", err);
       }
     });
 
@@ -150,7 +150,7 @@ const renameBucket = async (oldName, newName) => {
 // List incomplete uploads in a bucket
 const listIncompleteUploads = async (
   bucketName,
-  prefix = '',
+  prefix = "",
   recursive = false
 ) => {
   try {
@@ -167,7 +167,7 @@ const listIncompleteUploads = async (
 
     return { success: true, list: uploads };
   } catch (err) {
-    console.error('Error listing incomplete uploads:', err);
+    console.error("Error listing incomplete uploads:", err);
     return { success: false, error: err };
   }
 };

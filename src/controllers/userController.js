@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const { getUserById, getUserByUsername } = require('../services/userServices');
+const jwt = require("jsonwebtoken");
+const { getUserById, getUserByUsername } = require("../services/userServices");
 
 const getUserInfoById = async (req, res) => {
   const userId = req.params.userId;
@@ -10,7 +10,7 @@ const getUserInfoById = async (req, res) => {
       res.json({ name, avatar, email, username, publishAt });
     })
     .catch((error) => {
-      console.log('Error getUserInfoById: ', error);
+      console.log("Error getUserInfoById: ", error);
       res.status(500).json({});
     });
 };
@@ -24,7 +24,7 @@ const getUserInfoByToken = async (req, res) => {
 
   jwt.verify(token, process.env.SECRET_KEY, (err, payload) => {
     if (err) {
-      console.log('Error getUserInfoByToken: ', err);
+      console.log("Error getUserInfoByToken: ", err);
       return res.json({}); // Forbidden
     }
 
@@ -36,7 +36,7 @@ const getUserInfoByToken = async (req, res) => {
         res.json({ name, avatar, email, username, publishAt });
       })
       .catch((error) => {
-        console.log('Error: ', error);
+        console.log("Error: ", error);
         res.status(500).json({});
       });
   });

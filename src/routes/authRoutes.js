@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 const {
@@ -6,11 +6,11 @@ const {
   handleRegister,
   handleResetPassword,
   handleForgotPassword,
-} = require('../controllers/authController.js');
+} = require("../controllers/authController.js");
 
-router.post('/login', handleLogin);
-router.post('/register', handleRegister);
-router.post('/reset-password', handleResetPassword);
-router.post('/forgot-password', handleForgotPassword);
+router.post("/login", handleLogin);
+router.post("/register", handleRegister);
+router.post("/reset-password", handleResetPassword);
+router.post("/forgot-password", handleForgotPassword);
 
 module.exports = router;

@@ -1,16 +1,16 @@
-const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
-const { isEmpty } = require('../utils');
+const { isEmpty } = require("../utils");
 const {
   createUser,
   getUserByEmail,
   getUserByUsername,
   updateResetCodeByEmail,
   updatePasswordByResetCode,
-} = require('../services/userServices.js');
+} = require("../services/userServices.js");
 
 const handleLogin = async (req, res, next) => {
   const { username, password } = req.body;
@@ -24,16 +24,16 @@ const handleLogin = async (req, res, next) => {
 
     if (isEmpty(user)) {
       return res.status(401).json({
-        message: 'Username or email is incorrect.',
-        unauthenticated: 'username',
+        message: "Username or email is incorrect.",
+        unauthenticated: "username",
       });
     } else {
       const isPasswordValid = await bcrypt.compare(password, user.password);
 
       if (!isPasswordValid) {
         return res.status(401).json({
-          message: 'Password is incorrect.',
-          unauthenticated: 'password',
+          message: "Password is incorrect.",
+          unauthenticated: "password",
         });
       }
 
@@ -47,14 +47,14 @@ const handleLogin = async (req, res, next) => {
           username: user.username,
         },
         process.env.SECRET_KEY,
-        { expiresIn: '24h' }
+        { expiresIn: "24h" }
       );
 
       return res.json({ token });
     }
   } catch (error) {
-    console.log('Error: ', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.log("Error: ", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -67,29 +67,29 @@ const handleRegister = async (req, res, next) => {
     .then((values) => {
       if (!isEmpty(values[0])) {
         return res.status(409).json({
-          message: 'Username already exists.',
-          conflict: 'username',
+          message: "Username already exists.",
+          conflict: "username",
         });
       } else if (!isEmpty(values[1])) {
         return res.status(409).json({
-          message: 'Email already exists.',
-          conflict: 'email',
+          message: "Email already exists.",
+          conflict: "email",
         });
       } else {
         Promise.all([createUser(username, hashedPassword, email)])
           .then(() => {
             return res
               .status(200)
-              .json({ message: 'User created successfully.' });
+              .json({ message: "User created successfully." });
           })
           .catch((error) => {
-            console.log('Error: ', error);
+            console.log("Error: ", error);
             return res.status(500).json({});
           });
       }
     })
     .catch((error) => {
-      console.log('Error: ', error);
+      console.log("Error: ", error);
       return res.status(500).json({});
     });
 };
@@ -102,10 +102,10 @@ const handleForgotPassword = async (req, res, next) => {
   if (isEmpty(userInfo)) {
     return res
       .status(400)
-      .json({ message: 'Email is incorrect.', unauthenticated: 'email' });
+      .json({ message: "Email is incorrect.", unauthenticated: "email" });
   }
 
-  const verificationCode = crypto.randomBytes(4).toString('hex');
+  const verificationCode = crypto.randomBytes(4).toString("hex");
   const resetCodeExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
   const result = await updateResetCodeByEmail(
@@ -115,11 +115,11 @@ const handleForgotPassword = async (req, res, next) => {
   );
 
   if (!result.success) {
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: "Internal server error" });
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: "gmail",
     auth: {
       user: process.env.MY_EMAIL,
       pass: process.env.MY_EMAIL_PASSWORD,
@@ -129,7 +129,7 @@ const handleForgotPassword = async (req, res, next) => {
   const mailOptions = {
     from: process.env.MY_EMAIL,
     to: email,
-    subject: 'Password Reset Verification Code',
+    subject: "Password Reset Verification Code",
     text: `Your verification code is ${verificationCode}`,
   };
 
@@ -138,12 +138,12 @@ const handleForgotPassword = async (req, res, next) => {
       console.log(error);
       return res.json({
         success: false,
-        message: 'Error sending email.',
+        message: "Error sending email.",
       });
     } else {
       return res.json({
         success: true,
-        message: 'Verification code sent.',
+        message: "Verification code sent.",
       });
     }
   });
@@ -163,17 +163,17 @@ const handleResetPassword = async (req, res, next) => {
     if (result.success) {
       return res.json({
         success: true,
-        message: 'Reset password successfully.',
+        message: "Reset password successfully.",
       });
     } else {
       return res.status(401).json({
         message: result.message,
-        unauthenticated: 'code',
+        unauthenticated: "code",
       });
     }
   } catch (error) {
-    console.log('Error: ', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.log("Error: ", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
