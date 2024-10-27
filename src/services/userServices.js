@@ -90,7 +90,10 @@ const updateResetCodeByEmail = async (email, resetCode, expires) => {
     );
 
     if (result.affectedRows === 0) {
-      return { success: false, message: 'No user found with the given email' };
+      return {
+        success: false,
+        message: 'No user found with the given email',
+      };
     }
 
     return { success: true };

@@ -136,9 +136,15 @@ const handleForgotPassword = async (req, res, next) => {
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.log(error);
-      return res.json({ success: false, message: 'Error sending email.' });
+      return res.json({
+        success: false,
+        message: 'Error sending email.',
+      });
     } else {
-      return res.json({ success: true, message: 'Verification code sent.' });
+      return res.json({
+        success: true,
+        message: 'Verification code sent.',
+      });
     }
   });
 };
