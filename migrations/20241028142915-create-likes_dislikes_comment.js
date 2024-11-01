@@ -5,7 +5,8 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("likes_dislikes_comments", {
       id: {
-        type: Sequelize.STRING,
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
       },
       like_dislike: {
@@ -13,7 +14,7 @@ module.exports = {
         allowNull: false,
       },
       comment_id: {
-        type: Sequelize.STRING,
+        type: Sequelize.UUID,
         allowNull: false,
         references: {
           model: "comments",
@@ -23,7 +24,7 @@ module.exports = {
         onDelete: "CASCADE",
       },
       user_id: {
-        type: Sequelize.STRING,
+        type: Sequelize.UUID,
         allowNull: false,
         references: {
           model: "users",

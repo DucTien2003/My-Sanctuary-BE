@@ -6,10 +6,10 @@ const commentRoutes = require("./commentRoutes.js");
 
 const declareRoutes = (app) => {
   app.use("/api/auth", authRoutes);
-  app.use("/api/user", userRoutes);
-  app.use("/api/comic", comicRoutes);
-  app.use("/api/chapter", chapterRoutes);
-  app.use("/api/comment", commentRoutes);
+  app.use("/api/users", userRoutes);
+  app.use("/api/comics", comicRoutes);
+  app.use("/api/chapters", chapterRoutes);
+  app.use("/api/comments", commentRoutes);
 };
 
 module.exports = declareRoutes;

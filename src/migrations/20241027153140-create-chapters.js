@@ -3,25 +3,38 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("images", {
+    await queryInterface.createTable("chapters", {
       id: {
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
+        type: Sequelize.STRING,
         primaryKey: true,
+      },
+      name: {
+        type: Sequelize.STRING,
+        allowNull: false,
       },
       number_order: {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
-      url: {
+      name_minio: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      chapter_id: {
-        type: Sequelize.UUID,
+      views: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      comments: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      comic_id: {
+        type: Sequelize.STRING,
         allowNull: false,
         references: {
-          model: "chapters",
+          model: "comics",
           key: "id",
         },
         onUpdate: "CASCADE",
@@ -43,6 +56,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("images");
+    await queryInterface.dropTable("chapters");
   },
 };

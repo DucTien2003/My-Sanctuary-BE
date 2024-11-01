@@ -1,36 +1,34 @@
 "use strict";
 const { Model, DataTypes } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 
 module.exports = (sequelize) => {
-  class Image extends Model {}
+  class Genre extends Model {}
 
-  Image.init(
+  Genre.init(
     {
       id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
+        defaultValue: () => uuidv4(),
         primaryKey: true,
       },
-      number_order: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      url: {
+      name: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      chapter_id: {
-        type: DataTypes.STRING,
-        allowNull: false,
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
     },
     {
       sequelize,
-      modelName: "Image",
-      tableName: "images",
+      modelName: "Genre",
+      tableName: "genres",
       timestamps: true, // Tự động xử lý createdAt và updatedAt
       underscored: true, // Tự động chuyển cột thành snake_case
     }
   );
 
-  return Image;
+  return Genre;
 };

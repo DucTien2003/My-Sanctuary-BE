@@ -3,23 +3,49 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("chapters", {
+    await queryInterface.createTable("comics", {
       id: {
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
+        type: Sequelize.STRING,
         primaryKey: true,
       },
       name: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      number_order: {
+      subname: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      cover: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      status: {
+        type: Sequelize.ENUM("ongoing", "dropped", "completed"),
+        allowNull: false,
+        defaultValue: "ongoing",
+      },
+      author: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      translator: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+      rating: {
+        type: Sequelize.FLOAT,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      bookmarks: {
         type: Sequelize.INTEGER,
         allowNull: false,
-      },
-      name_minio: {
-        type: Sequelize.STRING,
-        allowNull: false,
+        defaultValue: 0,
       },
       views: {
         type: Sequelize.INTEGER,
@@ -31,11 +57,15 @@ module.exports = {
         allowNull: false,
         defaultValue: 0,
       },
-      comic_id: {
-        type: Sequelize.UUID,
+      name_minio: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      poster_id: {
+        type: Sequelize.STRING,
         allowNull: false,
         references: {
-          model: "comics",
+          model: "users",
           key: "id",
         },
         onUpdate: "CASCADE",
@@ -57,6 +87,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("chapters");
+    await queryInterface.dropTable("comics");
   },
 };

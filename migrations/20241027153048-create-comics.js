@@ -5,7 +5,8 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("comics", {
       id: {
-        type: Sequelize.STRING,
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
       },
       name: {
@@ -60,9 +61,10 @@ module.exports = {
       name_minio: {
         type: Sequelize.STRING,
         allowNull: false,
+        unique: true,
       },
       poster_id: {
-        type: Sequelize.STRING,
+        type: Sequelize.UUID,
         allowNull: false,
         references: {
           model: "users",

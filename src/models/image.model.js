@@ -1,48 +1,38 @@
 "use strict";
 const { Model, DataTypes } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 
 module.exports = (sequelize) => {
-  class Comment extends Model {}
+  class Image extends Model {}
 
-  Comment.init(
+  Image.init(
     {
       id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
+        defaultValue: () => uuidv4(),
         primaryKey: true,
       },
-      content: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-      },
-      left_value: {
+      number_order: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      right_value: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      user_id: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      comic_id: {
+      url: {
         type: DataTypes.STRING,
         allowNull: false,
       },
       chapter_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
         allowNull: false,
       },
     },
     {
       sequelize,
-      modelName: "Comment",
-      tableName: "comments",
+      modelName: "Image",
+      tableName: "images",
       timestamps: true, // Tự động xử lý createdAt và updatedAt
       underscored: true, // Tự động chuyển cột thành snake_case
     }
   );
 
-  return Comment;
+  return Image;
 };

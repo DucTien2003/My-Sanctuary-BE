@@ -1,4 +1,5 @@
 require("dotenv").config();
+const cookieParser = require("cookie-parser");
 
 const cors = require("cors");
 const express = require("express");
@@ -16,6 +17,9 @@ app.use(cors());
 // Config request body
 app.use(express.json()); // For Json
 app.use(express.urlencoded({ extended: true })); // For form data
+
+// Config cookie
+app.use(cookieParser()); // Middleware để xử lý cookie
 
 // Config pre-route
 declareRoutes(app);

@@ -3,43 +3,45 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("chapters", {
+    await queryInterface.createTable("users", {
       id: {
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
+        type: Sequelize.STRING,
         primaryKey: true,
       },
       name: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      number_order: {
-        type: Sequelize.INTEGER,
+      email: {
+        type: Sequelize.STRING,
         allowNull: false,
+        unique: true,
       },
-      name_minio: {
+      username: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true,
+      },
+      password: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      views: {
-        type: Sequelize.INTEGER,
+      role: {
+        type: Sequelize.ENUM("admin", "poster", "user"),
         allowNull: false,
-        defaultValue: 0,
+        defaultValue: "user",
       },
-      comments: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
+      refresh_token: {
+        type: Sequelize.STRING,
+        allowNull: true,
       },
-      comic_id: {
-        type: Sequelize.UUID,
-        allowNull: false,
-        references: {
-          model: "comics",
-          key: "id",
-        },
-        onUpdate: "CASCADE",
-        onDelete: "CASCADE",
+      reset_token: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      reset_token_expires: {
+        type: Sequelize.DATE,
+        allowNull: true,
       },
       created_at: {
         type: Sequelize.DATE,
@@ -57,6 +59,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("chapters");
+    await queryInterface.dropTable("users");
   },
 };

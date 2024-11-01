@@ -3,29 +3,18 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("images", {
+    await queryInterface.createTable("genres", {
       id: {
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
+        type: Sequelize.STRING,
         primaryKey: true,
       },
-      number_order: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-      },
-      url: {
+      name: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      chapter_id: {
-        type: Sequelize.UUID,
-        allowNull: false,
-        references: {
-          model: "chapters",
-          key: "id",
-        },
-        onUpdate: "CASCADE",
-        onDelete: "CASCADE",
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true,
       },
       created_at: {
         type: Sequelize.DATE,
@@ -43,6 +32,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("images");
+    await queryInterface.dropTable("genres");
   },
 };

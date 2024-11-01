@@ -1,36 +1,38 @@
 "use strict";
 const { Model, DataTypes } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 
 module.exports = (sequelize) => {
-  class RatingComicUser extends Model {}
+  class LikeDislikeComment extends Model {}
 
-  RatingComicUser.init(
+  LikeDislikeComment.init(
     {
       id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
+        defaultValue: () => uuidv4(),
         primaryKey: true,
       },
-      rating: {
-        type: DataTypes.INTEGER,
+      like_dislike: {
+        type: DataTypes.ENUM("like", "dislike"),
         allowNull: false,
       },
-      comic_id: {
-        type: DataTypes.STRING,
+      comment_id: {
+        type: DataTypes.UUID,
         allowNull: false,
       },
       user_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
         allowNull: false,
       },
     },
     {
       sequelize,
-      modelName: "RatingComicUser",
-      tableName: "rating_comics_users",
+      modelName: "LikeDislikeComment",
+      tableName: "likes_dislikes_comment",
       timestamps: true, // Tự động xử lý createdAt và updatedAt
       underscored: true, // Tự động chuyển cột thành snake_case
     }
   );
 
-  return RatingComicUser;
+  return LikeDislikeComment;
 };

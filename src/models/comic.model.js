@@ -1,5 +1,6 @@
 "use strict";
 const { Model, DataTypes } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 
 module.exports = (sequelize) => {
   class Comic extends Model {}
@@ -7,7 +8,8 @@ module.exports = (sequelize) => {
   Comic.init(
     {
       id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
+        defaultValue: () => uuidv4(),
         primaryKey: true,
       },
       name: {
@@ -64,7 +66,7 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
       poster_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
         allowNull: false,
       },
     },

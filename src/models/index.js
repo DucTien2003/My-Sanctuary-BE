@@ -1,5 +1,5 @@
 require("dotenv").config();
-const config = require("../config/config");
+const config = require("../../config/config");
 const { Sequelize } = require("sequelize");
 
 // Import models
@@ -22,6 +22,8 @@ const { database, username, password, host, dialect } = config[env];
 const sequelize = new Sequelize(database, username, password, {
   host,
   dialect,
+  logging: false,
+  timezone: "+07:00",
 });
 
 // Models

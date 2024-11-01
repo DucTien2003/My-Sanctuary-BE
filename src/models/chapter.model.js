@@ -1,5 +1,6 @@
 "use strict";
 const { Model, DataTypes } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 
 module.exports = (sequelize) => {
   class Chapter extends Model {}
@@ -7,7 +8,8 @@ module.exports = (sequelize) => {
   Chapter.init(
     {
       id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
+        defaultValue: () => uuidv4(),
         primaryKey: true,
       },
       name: {
@@ -33,7 +35,7 @@ module.exports = (sequelize) => {
         defaultValue: 0,
       },
       comic_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
         allowNull: false,
       },
     },

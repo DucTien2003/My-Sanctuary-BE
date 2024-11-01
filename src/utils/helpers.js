@@ -19,13 +19,22 @@ const showQuantity = (number) => {
 };
 
 const isEmpty = (value) => {
-  return (
-    value === null || // check for null
-    value === undefined || // check for undefined
-    value === "" || // check for empty string
-    (Array.isArray(value) && value.length === 0) || // check for empty array
-    (typeof value === "object" && Object.keys(value).length === 0) // check for empty object
-  );
+  if (value === null || value === undefined) {
+    return true; // check for null or undefined
+  }
+  if (typeof value === "string" || typeof value === "number") {
+    return value === ""; // check for empty string or number
+  }
+  if (Array.isArray(value)) {
+    return value.length === 0 || value.every(isEmpty); // check for empty array or array of empty values
+  }
+  if (typeof value === "object") {
+    return (
+      Object.keys(value).length === 0 || Object.values(value).every(isEmpty)
+    ); // check for empty object or object with empty values
+  }
+
+  return false;
 };
 
 // Sort by last number of string

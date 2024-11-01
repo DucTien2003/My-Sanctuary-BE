@@ -3,6 +3,10 @@ const jwt = require("jsonwebtoken");
 function authenticateToken(req, res, next) {
   const token = req.headers.token;
 
+  const refreshToken = req.cookies.refreshToken;
+
+  console.log("refreshToken: ", refreshToken);
+
   if (!token) {
     req.id = null;
     req.role = null;
