@@ -1,374 +1,258 @@
 const { isEmpty, formatPath } = require("../utils");
-const {
-  getLatestChapter,
-  checkChapterExistsByComicId,
-} = require("../services/chapterServices");
-const {
-  imageExists,
-  uploadImage,
-  removeImage,
-  createBucket,
-  renameBucket,
-  removeBucket,
-} = require("../services/minIOServices");
-const {
-  createComic,
-  updateComic,
-  getAllGenres,
-  getComicById,
-  getListComics,
-  getComicsByUserId,
-  createComicRating,
-  updateComicRating,
-  deleteComicRating,
-  getGenresByComicId,
-  createGenresComics,
-  updateGenresComics,
-  deleteGenresComics,
-  createComicBookmark,
-  deleteComicBookmark,
-  deleteComicByComicId,
-  getComicRatingByUserId,
-  getComicBookmarkByUserId,
-} = require("../services/comicServices.js");
 
-const handleGetComicById = async (req, res) => {
+const services = require("../services");
+
+const handleGetComicByComicId = async (req, res) => {
   const authId = req.id;
   const comicId = req.params.comicId;
+  const { limit, orderBy, sortType, page } = req.query;
 
-  Promise.all([
-    getComicById(comicId),
-    getGenresByComicId(comicId),
-    getComicRatingByUserId(comicId, authId),
-    getComicBookmarkByUserId(comicId, authId),
-  ])
-    .then((values) => {
-      const [comicInfo, genres, authRating, authBookmark] = values;
-
-      return res.json({
-        ...comicInfo,
-        genres,
-        authRating: isEmpty(authRating) ? 0 : authRating.rating,
-        authBookmark: !isEmpty(authBookmark),
+  try {
+    const { code, success, message, ...data } =
+      await services.getComicByComicIdService({
+        comicId,
+        authId,
+        limit,
+        orderBy,
+        sortType,
+        page,
       });
-    })
-    .catch((error) => {
-      console.log("Error handleGetComicById: ", error);
-      return res.status(500).json({});
-    });
+
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log("Error handleGetComicByComicId: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
-const handleGetComicsByAuthId = async (req, res) => {
+const handleCreateOrUpdateRatingByUserForComic = async (req, res) => {
   const userId = req.id;
-
-  getComicsByUserId(userId)
-    .then((comics) => {
-      return res.json(comics);
-    })
-    .catch((error) => {
-      console.log("Error handleGetComicByUserId: ", error);
-      return res.status(500).json([]);
-    });
-};
-
-const handleCreateComicRating = async (req, res) => {
-  const userId = req.id;
-  const rating = req.body.rating;
+  const ratingData = req.body.rating;
   const comicId = req.params.comicId;
 
-  createComicRating(comicId, userId, rating)
-    .then((result) => {
-      return res.json(result);
-    })
-    .catch((error) => {
-      console.log("Error handleCreateComicRating: ", error);
-      return res.status(500).json({});
-    });
+  try {
+    const { code, success, message, ...data } =
+      await services.createOrUpdateRatingByUserForComicService({
+        comicId,
+        userId,
+        ratingData,
+      });
+
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log(
+      "Error handleCreateOrUpdateRatingByUserForComic: ",
+      error.message
+    );
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
-const handleUpdateComicRating = async (req, res) => {
-  const userId = req.id;
-  const rating = req.body.rating;
-  const comicId = req.params.comicId;
-
-  updateComicRating(comicId, userId, rating)
-    .then((result) => {
-      return res.json(result);
-    })
-    .catch((error) => {
-      console.log("Error handleUpdateComicRating: ", error);
-      return res.status(500).json({});
-    });
-};
-
-const handleDeleteComicRating = async (req, res) => {
+const handleDeleteRatingByUserForComic = async (req, res) => {
   const userId = req.id;
   const comicId = req.params.comicId;
 
-  deleteComicRating(comicId, userId)
-    .then((result) => {
-      return res.json(result);
-    })
-    .catch((error) => {
-      console.log("Error handleDeleteComicRating: ", error);
-      return res.status(500).json({});
-    });
+  try {
+    const { code, success, message, ...data } =
+      await services.deleteRatingByUserForComicService({ comicId, userId });
+
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log("Error handleDeleteRatingByUserForComic: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
-const handleCreateComicBookmark = async (req, res) => {
+const handleCreateBookmarkByUserForComic = async (req, res) => {
   const userId = req.id;
   const comicId = req.params.comicId;
 
-  createComicBookmark(comicId, userId)
-    .then((result) => {
-      return res.json(result);
-    })
-    .catch((error) => {
-      console.log("Error handleCreateComicBookmark: ", error);
-      return res.status(500).json({});
-    });
+  try {
+    const { code, success, message, ...data } =
+      await services.createBookmarkByUserForComicService({ comicId, userId });
+
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log("Error handleCreateBookmarkByUserForComic: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
-const handleDeleteComicBookmark = async (req, res) => {
+const handleDeleteBookmarkByUserForComic = async (req, res) => {
   const userId = req.id;
   const comicId = req.params.comicId;
 
-  deleteComicBookmark(comicId, userId)
-    .then((result) => {
-      return res.json(result);
-    })
-    .catch((error) => {
-      console.log("Error: ", error);
-      return res.status(500).json({});
-    });
-};
+  try {
+    const { code, success, message } =
+      await services.deleteBookmarkByUserForComicService({ comicId, userId });
 
-const handleGetAllGenres = async (req, res) => {
-  getAllGenres()
-    .then((genres) => {
-      return res.json(genres);
-    })
-    .catch((error) => {
-      console.log("Error handleGetAllGenres: ", error);
-      return res.status(500).json([]);
-    });
+    return res.status(code).json({ code, success, message });
+  } catch (error) {
+    console.log("Error handleDeleteBookmarkByUserForComic: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
 const handleCreateComic = async (req, res) => {
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).send("No files uploaded.");
-  }
-
   const userId = req.id;
-  const imageFiles = req.files;
-  const genres = JSON.parse(req.body.genres);
-  const { name, author, status, subName, translator, description } = req.body;
-
-  let nameMinio = formatPath(name);
-  const coverBucket = "covers";
+  const coverFile = req.files[0];
+  const comicInfo = JSON.parse(req.body.comicInfo);
 
   try {
-    const nameOrigin = nameMinio;
-    let isCoverExists = await imageExists(coverBucket, `${nameMinio}.jpg`);
-
-    while (isCoverExists) {
-      const random = Math.floor(1000 + Math.random() * 9000);
-      nameMinio = `${nameOrigin}-${random}`;
-      isCoverExists = await imageExists(coverBucket, `${nameMinio}.jpg`);
-    }
-
-    const [createBucketResult, uploadImageResult] = await Promise.all([
-      createBucket(nameMinio),
-      uploadImage(coverBucket, `${nameMinio}.jpg`, imageFiles[0]),
-    ]);
-
-    if (createBucketResult.success && uploadImageResult.success) {
-      const comic = {
-        name,
-        cover: uploadImageResult.fileUrl,
+    const { code, success, message, ...data } =
+      await services.createComicService({
         userId,
-        author,
-        status,
-        subName,
-        nameMinio,
-        translator,
-        description,
-      };
+        coverFile,
+        comicInfo,
+      });
 
-      const resultCreateComic = await createComic(comic);
-      if (!resultCreateComic.success) {
-        return res.status(500).json({ message: "Create comic failed" });
-      }
-
-      const result = await createGenresComics(
-        resultCreateComic.newComicId,
-        genres
-      );
-
-      if (result.success) {
-        res.json({ success: true });
-      }
-    }
+    return res.status(code).json({ code, success, message, data });
   } catch (error) {
-    console.log("Error handleCreateComic: ", error);
-    return res.status(500).json({});
+    console.log("Error handleCreateComic: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
 };
 
-const handleUpdateComicById = async (req, res) => {
+const handleUpdateComicByComicId = async (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).send("No files uploaded.");
   }
 
   const comicId = req.params.comicId;
-  const imageFiles = req.files;
-  const genres = JSON.parse(req.body.genres);
+  const userId = req.id;
+  const coverFile = req.files[0];
+  const comicInfo = JSON.parse(req.body.comicInfo);
   const oldComicInfo = JSON.parse(req.body.oldComicInfo);
-  const { name, author, status, subName, translator, description } = req.body;
-
-  let coverUrl = "";
-  let nameMinio = formatPath(name);
-  const coverBucket = "covers";
 
   try {
-    const oldCoverName = oldComicInfo.cover.split("/").pop();
-    const removeImageResult = await removeImage(coverBucket, oldCoverName);
+    const { code, success, message, ...data } =
+      await services.updateComicByComicIdService({
+        userId,
+        comicId,
+        coverFile,
+        comicInfo,
+        oldComicInfo,
+      });
 
-    if (!removeImageResult.success) {
-      // return res.status(500).json({});
-    }
-
-    if (oldComicInfo.nameMinio !== nameMinio) {
-      const nameOrigin = nameMinio;
-      let isCoverExists = await imageExists(coverBucket, `${nameMinio}.jpg`);
-
-      while (isCoverExists) {
-        const random = Math.floor(1000 + Math.random() * 9000);
-        nameMinio = `${nameOrigin}-${random}`;
-        isCoverExists = await imageExists(coverBucket, `${nameMinio}.jpg`);
-      }
-
-      const [renameResult, uploadResult] = await Promise.all([
-        renameBucket(oldComicInfo.nameMinio, nameMinio),
-        uploadImage(coverBucket, `${nameMinio}.jpg`, imageFiles[0]),
-      ]);
-      coverUrl = uploadResult.fileUrl;
-
-      if (!renameResult.success || !uploadResult.success) {
-        return res.status(500).json({});
-      }
-    } else {
-      const [uploadResult] = await Promise.all([
-        uploadImage(coverBucket, oldCoverName, imageFiles[0]),
-      ]);
-      coverUrl = uploadResult.fileUrl;
-    }
-
-    const comic = {
-      id: comicId,
-      name,
-      cover: coverUrl,
-      author,
-      status,
-      subName,
-      nameMinio,
-      translator,
-      description,
-    };
-
-    const result = await updateComic(comic);
-
-    if (result.success) {
-      const resultGenres = await updateGenresComics(comicId, genres);
-
-      if (resultGenres.success) {
-        res.json({ success: true });
-      }
-    }
+    return res.status(code).json({ code, success, message, data });
   } catch (error) {
-    console.log("Error handleUpdateComic: ", error);
-    return res.status(500).json({});
+    console.log("Error handleUpdateComicByComicId: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
 };
 
-const handleDeleteComicById = async (req, res) => {
+const handleDeleteComicByComicId = async (req, res) => {
   const comicId = req.params.comicId;
 
-  const isStillChapterExists = await checkChapterExistsByComicId(comicId);
-
-  if (isStillChapterExists) {
-    return res.status(400).json({ message: "Still have chapter exists" });
-  }
-
   try {
-    const [comicInfo] = await Promise.all([getComicById(comicId)]);
+    const { code, success, message, ...data } =
+      await services.deleteComicByComicIdService({ comicId });
 
-    const coverBucket = "covers";
-    const coverName = comicInfo.cover.split("/").pop();
-
-    const [deleteGenresComicsResult] = await Promise.all([
-      deleteGenresComics(comicId),
-    ]);
-
-    if (deleteGenresComicsResult.success) {
-      const [deleteComicResult, removeImageResult, deleteBucketResult] =
-        await Promise.all([
-          deleteComicByComicId(comicId),
-          removeImage(coverBucket, coverName),
-          removeBucket(comicInfo.nameMinio),
-        ]);
-
-      if (
-        deleteComicResult.success &&
-        removeImageResult.success &&
-        deleteBucketResult.success
-      ) {
-        return res.json({ success: true });
-      }
-    }
+    return res.status(code).json({ code, success, message, data });
   } catch (error) {
-    console.log("Error handleDeleteComicById: ", error);
-    return res.status(500).json({});
+    console.log("Error handleDeleteComicByComicId: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
 };
 
-const handleGetListComics = async (req, res) => {
-  const page = Number(req.query.page);
-  const limit = Number(req.query.limit);
-  const orderBy = req.query.orderBy;
-  const ascending = req.query.ascending;
+const handleGetComics = async (req, res) => {
+  const { limit, orderBy, sortType, page } = req.query;
 
-  getListComics({ limit, orderBy, ascending, page })
-    .then(async (comics) => {
-      const comicsWithLatestChapter = await Promise.all(
-        comics.map(async (comic) => {
-          const latestChapter = await getLatestChapter(comic.id);
-          return {
-            ...comic,
-            latestChapter,
-          };
-        })
-      );
+  try {
+    const { code, success, message, ...data } = await services.getComicsService(
+      {
+        limit,
+        orderBy,
+        sortType,
+        page,
+      }
+    );
 
-      return res.json(comicsWithLatestChapter);
-    })
-    .catch((error) => {
-      console.log("Error handleGetListComics: ", error);
-      return res.status(500).json([]);
-    });
+    return res.status(code).json({ code, success, message, data: data });
+  } catch (error) {
+    console.log("Error handleGetComics: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
+};
+
+const handleGetChaptersByComicId = async (req, res) => {
+  const comicId = req.params.comicId;
+  const { limit, page, orderBy, sortType } = req.query;
+
+  try {
+    const { code, success, message, ...data } =
+      await services.getChaptersByComicIdService({
+        comicId,
+        limit,
+        page,
+        orderBy,
+        sortType,
+      });
+
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log("Error handleGetChaptersByComicId: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
+};
+
+const handleGetCommentsByComicId = async (req, res) => {
+  const comicId = req.params.comicId;
+  const { limit, page } = req.query;
+
+  try {
+    const { code, success, message, ...data } =
+      await services.getCommentsByComicIdService({ comicId, limit, page });
+
+    return res.status(code).json({ code, success, message, data: data });
+  } catch (error) {
+    console.log("Error handleGetCommentsByComicId: ", error.message);
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
 module.exports = {
+  handleGetComicByComicId,
+  handleCreateOrUpdateRatingByUserForComic,
+  handleDeleteRatingByUserForComic,
+  handleCreateBookmarkByUserForComic,
+  handleDeleteBookmarkByUserForComic,
   handleCreateComic,
-  handleGetAllGenres,
-  handleGetComicById,
-  handleGetListComics,
-  handleUpdateComicById,
-  handleDeleteComicById,
-  handleGetComicsByAuthId,
-  handleCreateComicRating,
-  handleUpdateComicRating,
-  handleDeleteComicRating,
-  handleCreateComicBookmark,
-  handleDeleteComicBookmark,
+  handleUpdateComicByComicId,
+  handleDeleteComicByComicId,
+  handleGetComics,
+  handleGetChaptersByComicId,
+  handleGetCommentsByComicId,
 };

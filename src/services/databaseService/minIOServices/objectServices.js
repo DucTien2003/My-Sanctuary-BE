@@ -1,27 +1,29 @@
-const path = require("path");
-
-const { minioClient } = require("../../config/minIO");
+const { minioClient } = require("../../../config/minIO");
 const { getListChapters } = require("./bucketServices");
+const { isEmpty } = require("../../../utils");
 
 // Check exists of a chapter
 const chapterExists = async (bucketName, chapterName) => {
-  const exists = await getListChapters(bucketName, chapterName);
+  const { chapters, success } = await getListChapters(bucketName, chapterName);
 
-  if (exists.success && exists.list.length > 0) {
-    return { isExists: true, exists };
+  if (success && chapters.length > 0) {
+    return { existed: true, success };
   } else {
-    return { isExists: false, exists };
+    return { existed: false, success };
   }
 };
 
 // Check exists of a image
 const imageExists = async (bucketName, objectName) => {
   try {
-    await minioClient.statObject(bucketName, objectName);
-    return true;
+    const image = await minioClient.statObject(bucketName, objectName);
+
+    return isEmpty(image)
+      ? { success: true, existed: false }
+      : { success: true, existed: true };
   } catch (error) {
     if (error.code === "NotFound") {
-      return false;
+      return { success: true, existed: false };
     }
     throw error;
   }

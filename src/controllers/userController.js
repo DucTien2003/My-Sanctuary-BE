@@ -1,48 +1,83 @@
-const jwt = require("jsonwebtoken");
-const { getUserById, getUserByUsername } = require("../services/userServices");
+const services = require("../services");
 
-const getUserInfoById = async (req, res) => {
-  const userId = req.params.userId;
+const handleGetUserByMyId = async (req, res) => {
+  const userId = req.id;
 
-  Promise.all([getUserById(userId)])
-    .then((values) => {
-      const { name, avatar, email, username, publishAt } = values[0];
-      res.json({ name, avatar, email, username, publishAt });
-    })
-    .catch((error) => {
-      console.log("Error getUserInfoById: ", error);
-      res.status(500).json({});
-    });
+  try {
+    const { code, success, message, ...data } =
+      await services.getUserByUserIdService({ userId });
+
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log("Error handleGetUserByMyId: ", error);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
-const getUserInfoByToken = async (req, res) => {
-  const token = req.headers.token;
+const handleGetUserByUserId = async (req, res) => {
+  const userId = req.params.userId;
 
-  if (!token) {
-    return res.json({}); // Unauthorized
+  try {
+    const { code, success, message, ...data } =
+      await services.getUserByUserIdService({ userId });
+
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log("Error handleGetUserByUserId: ", error);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
+};
 
-  jwt.verify(token, process.env.SECRET_KEY, (err, payload) => {
-    if (err) {
-      console.log("Error getUserInfoByToken: ", err);
-      return res.json({}); // Forbidden
-    }
+const handleGetComicsByUserId = async (req, res) => {
+  const userId = req.params.userId;
 
-    const username = payload.username;
+  try {
+    const { code, success, message, ...data } =
+      await services.getComicsByUserIdService(userId);
 
-    Promise.all([getUserByUsername(username)])
-      .then((values) => {
-        const { name, avatar, email, username, publishAt } = values[0];
-        res.json({ name, avatar, email, username, publishAt });
-      })
-      .catch((error) => {
-        console.log("Error: ", error);
-        res.status(500).json({});
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log("Error handleGetComicsByUserId: ", error);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
+};
+
+const handleGetComicsByMyId = async (req, res) => {
+  const userId = req.id;
+  const { limit, page, orderBy, sortType } = req.query;
+
+  try {
+    const { code, success, message, ...data } =
+      await services.getComicsByUserIdService({
+        userId,
+        limit,
+        page,
+        orderBy,
+        sortType,
       });
-  });
+
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log("Error handleGetComicsByMyId: ", error);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
 module.exports = {
-  getUserInfoById,
-  getUserInfoByToken,
+  handleGetUserByMyId,
+  handleGetUserByUserId,
+  handleGetComicsByUserId,
+  handleGetComicsByMyId,
 };

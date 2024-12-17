@@ -58,6 +58,7 @@ Genre.belongsToMany(Comic, {
   foreignKey: "genre_id",
   otherKey: "comic_id",
 });
+Genre.hasMany(ComicGenre, { foreignKey: "genre_id" });
 
 // Comic
 Comic.belongsTo(User, { foreignKey: "poster_id", targetKey: "id" });
@@ -70,6 +71,7 @@ Comic.belongsToMany(Genre, {
   foreignKey: "comic_id",
   otherKey: "genre_id",
 });
+Comic.hasMany(ComicGenre, { foreignKey: "comic_id" });
 
 // Chapter
 Chapter.belongsTo(Comic, { foreignKey: "comic_id", targetKey: "id" });

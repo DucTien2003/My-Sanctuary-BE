@@ -40,9 +40,20 @@ module.exports = {
         ),
       },
     });
+
+    await queryInterface.addIndex("images", ["chapter_id"], {
+      name: "index_images_on_chapter_id",
+    });
   },
 
   async down(queryInterface, Sequelize) {
+    await queryInterface.sequelize.query(`
+      ALTER TABLE images
+      DROP FOREIGN KEY images_ibfk_1;
+    `);
+
+    await queryInterface.removeIndex("images", "index_images_on_chapter_id");
+
     await queryInterface.dropTable("images");
   },
 };

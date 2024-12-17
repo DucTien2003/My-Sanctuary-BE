@@ -16,6 +16,16 @@ module.exports = (sequelize) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
+      likes: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      dislikes: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
       left_value: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -23,6 +33,11 @@ module.exports = (sequelize) => {
       right_value: {
         type: DataTypes.INTEGER,
         allowNull: false,
+      },
+      root: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
       },
       user_id: {
         type: DataTypes.UUID,
@@ -34,7 +49,7 @@ module.exports = (sequelize) => {
       },
       chapter_id: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
       },
     },
     {

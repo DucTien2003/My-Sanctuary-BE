@@ -2,14 +2,18 @@ const express = require("express");
 const authenticateToken = require("../middleware/authenticateToken.js");
 
 const {
-  getUserInfoById,
-  getUserInfoByToken,
+  handleGetUserByMyId,
+  handleGetComicsByMyId,
+  handleGetUserByUserId,
+  handleGetComicsByUserId,
 } = require("../controllers/userController.js");
 
 const router = express.Router();
 
-// router.get("/auth", getUserInfoByToken);
-// Get user
-router.get("/:userId", getUserInfoById);
+router.get("/my", authenticateToken, handleGetUserByMyId);
+router.get("/my/comics", authenticateToken, handleGetComicsByMyId);
+
+router.get("/:userId", handleGetUserByUserId);
+router.get("/:userId/comics", handleGetComicsByUserId);
 
 module.exports = router;

@@ -1,232 +1,273 @@
-const pool = require("../config/database");
-const { convertToCamelCase } = require("../utils");
+const databaseService = require("./databaseService");
 
-const getCommentById = async (commentId) => {
-  try {
-    const [commentsInfo] = await pool.query(
-      "SELECT * FROM comments WHERE id = ?",
-      [commentId]
-    );
-
-    return commentsInfo.length > 0 ? convertToCamelCase(commentsInfo[0]) : {};
-  } catch (error) {
-    console.log("Error: ", error);
-    return {};
+// Utils
+// Handle nested comments
+const handleNestedComments = async (comments) => {
+  if (comments.length === 0) {
+    return [];
   }
-};
 
-// const getCommentByChapterId = async (chapterId) => {
-//   try {
-//     const [commentsInfo] = await pool.query(
-//       'SELECT * FROM comments WHERE chapter_id = ?',
-//       [chapterId]
-//     );
-
-//     return commentsInfo.length > 0 ? convertToCamelCase(commentsInfo[0]) : {};
-//   } catch (error) {
-//     console.log('Error: ', error);
-//     return {};
-//   }
-// };
-
-const createComment = async (content, comicId, userId) => {
-  try {
-    const [result] = await pool.query(
-      "INSERT INTO comments (content, comic_id, user_id) values(?, ?, ?)",
-      [content, comicId, userId]
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    const newCommentId = result.insertId;
-
-    return { success: true, newCommentId: newCommentId };
-  } catch (error) {
-    console.log("Error: ", error);
-    return { success: false };
-  }
-};
-
-const createReplyComment = async (content, comicId, parentId, userId) => {
-  try {
-    const [result] = await pool.query(
-      "INSERT INTO comments (content, comic_id, parent_id, user_id) values(?, ?, ?, ?)",
-      [content, comicId, parentId, userId]
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    const newReplyId = result.insertId;
-
-    return { success: true, newReplyId: newReplyId };
-  } catch (error) {
-    console.log("Error: ", error);
-    return { success: false };
-  }
-};
-
-const getAllCommentsByComicId = async (comicId) => {
-  try {
-    const [allComments] = await pool.query(
-      `WITH RECURSIVE CommentHierarchy AS (
-        SELECT
-            *,
-            0 AS level
-        FROM
-            comments
-        WHERE
-            parent_id IS NULL and comic_id = ?
-        UNION ALL
-        SELECT
-            c.*,
-            ch.level + 1 AS level
-        FROM
-            comments c
-        INNER JOIN
-            CommentHierarchy ch ON c.parent_id = ch.id
-      )
-        SELECT
-            *
-        FROM
-            CommentHierarchy
-        ORDER BY
-            publish_at DESC;`,
-      [comicId]
-    );
-
-    const allStandardComments = [];
-
-    const commentMap = new Map();
-    allComments.forEach((comment) => {
-      comment.replies = [];
-      commentMap.set(comment.id, comment);
+  const promises = comments.map(async (comment) => {
+    // Lấy thông tin người dùng
+    const { user } = await databaseService.getUserByUserId({
+      userId: comment.userId,
     });
+    comment.user = { id: user.id, avatar: user.avatar, name: user.name };
 
-    allComments.forEach((comment) => {
-      if (comment.level === 0) {
-        allStandardComments.push(comment);
-      } else {
-        let parentComment = commentMap.get(comment.parent_id);
-        while (parentComment && parentComment.level !== 0) {
-          parentComment = commentMap.get(parentComment.parent_id);
-        }
-        if (parentComment) {
-          parentComment.replies.push(convertToCamelCase(comment));
-        }
+    // Lấy thông tin like/dislike của người dùng đối với comment
+    const { likeDislike: authLikeDislike } =
+      await databaseService.getLikeDislikeByUserForComment({
+        userId: comment.userId,
+        commentId: comment.id,
+      });
+
+    if (authLikeDislike) {
+      if (authLikeDislike.likeDislike === "like") {
+        comment.authLiked = true;
+      } else if (authLikeDislike.likeDislike === "dislike") {
+        comment.authDisliked = true;
       }
-    });
-
-    // Sort comments and replies
-    const compareReplies = (a, b) => {
-      if (a.level !== b.level) {
-        return a.level - b.level;
-      } else {
-        return new Date(a.publish_at) - new Date(b.publish_at);
-      }
-    };
-
-    allComments.forEach((comment) => {
-      comment.replies.sort(compareReplies);
-    });
-
-    return convertToCamelCase(allStandardComments);
-  } catch (error) {
-    console.log("Error: ", error);
-    return [];
-  }
-};
-
-const getLikesByCommentId = async (commentId) => {
-  try {
-    const [likes] = await pool.query(
-      "SELECT * FROM likes_dislikes_comment WHERE comment_id = ? AND like_dislike = 1",
-      [commentId]
-    );
-
-    return likes.length > 0 ? convertToCamelCase(likes) : [];
-  } catch (error) {
-    console.log("Error: ", error);
-    return [];
-  }
-};
-
-const getDislikesByCommentId = async (commentId) => {
-  try {
-    const [dislikes] = await pool.query(
-      "SELECT * FROM likes_dislikes_comment WHERE comment_id = ? AND like_dislike = 0",
-      [commentId]
-    );
-
-    return dislikes.length > 0 ? convertToCamelCase(dislikes) : [];
-  } catch (error) {
-    console.log("Error: ", error);
-    return [];
-  }
-};
-
-const createLikeDislike = async (commentId, userId, likeDislike) => {
-  try {
-    const [result] = await pool.query(
-      "INSERT INTO likes_dislikes_comment (comment_id, user_id, like_dislike) values(?, ?, ?)",
-      [commentId, userId, likeDislike]
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
     }
 
-    return { success: true };
-  } catch (error) {
-    console.log("Error: ", error);
-    return { success: false };
-  }
-};
+    comment.replies = [];
+  });
+  await Promise.all(promises);
 
-const deleteLikeDislike = async (commentId, userId) => {
-  try {
-    const [result] = await pool.query(
-      "DELETE FROM likes_dislikes_comment WHERE comment_id = ? AND user_id = ?",
-      [commentId, userId]
-    );
+  // Sắp xếp các comment theo thứ tự `leftValue` để duyệt theo thứ tự phân cấp
+  comments.sort((a, b) => a.leftValue - b.leftValue);
 
-    return { success: true };
-  } catch (error) {
-    console.log("Error: ", error);
-    return { success: false };
-  }
-};
+  // Tạo một stack để theo dõi các node cha
+  const roots = [comments[0]];
+  let rightValueRoot = comments[0].rightValue;
 
-const updateLikeDislike = async (commentId, userId, likeDislike) => {
-  try {
-    const [result] = await pool.query(
-      "UPDATE likes_dislikes_comment SET like_dislike = ? WHERE comment_id = ? AND user_id = ?",
-      [likeDislike, commentId, userId]
-    );
+  for (let i = 1; i < comments.length; i++) {
+    // Nếu comment hiện tại là root
+    // if (comments[i].rightValue === rightValueRoot) {
+    //   roots.push(comments[i]);
+    //   continue;
+    // }
 
-    if (result.affectedRows === 0) {
-      return { success: false };
+    // Nếu comment hiện tại là con của root
+    if (roots.length > 0 && comments[i].rightValue < rightValueRoot) {
+      roots[roots.length - 1].replies.push(comments[i]);
+      continue;
     }
 
-    return { success: true };
-  } catch (error) {
-    console.log("Error: ", error);
-    return { success: false };
+    // Nếu comment hiện tại là 1 comment khác
+    if (roots.length > 0) {
+      rightValueRoot = comments[i].rightValue;
+      roots.push(comments[i]);
+    }
   }
+
+  return roots;
+};
+
+// Services
+const getCommentByCommentIdService = async ({ commentId }) => {
+  const { comment } = await databaseService.getCommentByCommentId({
+    commentId,
+  });
+
+  // Get user info
+  const { user } = await databaseService.getUserByUserId({
+    userId: comment.userId,
+  });
+  comment.user = { id: user.id, avatar: user.avatar, name: user.name };
+
+  // Get auth like/dislike info
+  const { likeDislike: authLikeDislike } =
+    await databaseService.getLikeDislikeByUserForComment({
+      userId: comment.userId,
+      commentId: comment.id,
+    });
+
+  if (authLikeDislike) {
+    if (authLikeDislike.likeDislike === "like") {
+      comment.authLiked = true;
+    } else if (authLikeDislike.likeDislike === "dislike") {
+      comment.authDisliked = true;
+    }
+  }
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy bình luận thành công",
+    comment,
+  };
+};
+
+const getCommentAndRepliesByCommentIdService = async ({
+  commentId,
+  comicId,
+}) => {
+  const { comments, count } =
+    await databaseService.getCommentAndRepliesByCommentId({
+      commentId,
+      comicId,
+    });
+
+  // Handle reply comments
+  const nestedComments = await handleNestedComments(comments);
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy bình luận thành công",
+    comment: nestedComments.length > 0 ? nestedComments[0] : null,
+    count,
+  };
+};
+
+const createCommentService = async ({
+  content,
+  comicId,
+  userId,
+  chapterId,
+}) => {
+  const { comment, created } = await databaseService.createComment({
+    userId,
+    content,
+    comicId,
+    chapterId: chapterId || null,
+  });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Tạo bình luận thành công",
+    comment,
+  };
+};
+
+const createReplyCommentService = async ({
+  userId,
+  content,
+  comicId,
+  chapterId,
+  parentRightValue,
+}) => {
+  const { comment, created } = await databaseService.createReplyComment({
+    userId,
+    content,
+    comicId,
+    chapterId,
+    parentRightValue,
+  });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Tạo bình luận thành công",
+    comment,
+  };
+};
+
+const getCommentsByComicIdService = async ({
+  comicId,
+  limit = 0,
+  page = 1,
+  orderBy = "created_at",
+  sortType = "ASC",
+}) => {
+  const { count, comments } = await databaseService.getCommentsByComicId({
+    comicId,
+    limit: Number(limit),
+    page: page ? Number(page) : 1,
+    orderBy,
+    sortType,
+  });
+
+  // Handle reply comments
+  const nestedComments = await handleNestedComments(comments);
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy bình luận thành công",
+    comments: nestedComments,
+    count,
+  };
+};
+
+const getCommentsByChapterIdService = async ({ chapterId }) => {
+  const { count, comments } = await databaseService.getCommentsByChapterId({
+    chapterId,
+  });
+
+  // Handle reply comments
+  const nestedComments = await handleNestedComments(comments);
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy bình luận thành công",
+    comments: nestedComments,
+    count,
+  };
+};
+
+const createOrUpdateLikeDislikeByUserForCommentService = async ({
+  userId,
+  commentId,
+  likeDislike,
+}) => {
+  const { likeDislikeResult, created } =
+    await databaseService.createOrUpdateLikeDislikeByUserForComment({
+      userId,
+      commentId,
+      likeDislike,
+    });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Tạo hoặc cập nhật like/dislike thành công",
+    likeDislike: likeDislikeResult,
+    created,
+  };
+};
+
+const deleteLikeDislikeByUserForCommentService = async ({
+  userId,
+  commentId,
+}) => {
+  const { deleted } = await databaseService.deleteLikeDislikeByUserForComment({
+    userId,
+    commentId,
+  });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Xóa like/dislike thành công",
+    deleted,
+  };
+};
+
+const getLikeDislikeByUserForCommentService = async ({ userId, commentId }) => {
+  const { likeDislike } = await databaseService.getLikeDislikeByUserForComment({
+    userId,
+    commentId,
+  });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy like/dislike thành công",
+    likeDislike,
+  };
 };
 
 module.exports = {
-  createComment,
-  getCommentById,
-  createLikeDislike,
-  updateLikeDislike,
-  deleteLikeDislike,
-  createReplyComment,
-  getLikesByCommentId,
-  // getCommentByChapterId,
-  getDislikesByCommentId,
-  getAllCommentsByComicId,
+  getCommentByCommentIdService,
+  getCommentAndRepliesByCommentIdService,
+  createCommentService,
+  createReplyCommentService,
+  getCommentsByComicIdService,
+  getCommentsByChapterIdService,
+  createOrUpdateLikeDislikeByUserForCommentService,
+  deleteLikeDislikeByUserForCommentService,
+  getLikeDislikeByUserForCommentService,
 };

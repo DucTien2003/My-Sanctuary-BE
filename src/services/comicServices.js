@@ -1,355 +1,486 @@
-const pool = require("../config/database");
-const { convertToCamelCase } = require("../utils");
+const databaseService = require("./databaseService");
+const { isEmpty, formatPath, errorSystemResponse } = require("../utils");
 
-const getComicById = async (comicId) => {
-  try {
-    const [comic, fields] = await pool.query(
-      `SELECT * FROM comics WHERE id = ?`,
-      [comicId]
-    );
-
-    return comic.length > 0 ? convertToCamelCase(comic[0]) : {};
-  } catch (error) {
-    console.log("Error: ", error);
-    return {};
-  }
-};
-
-const getComicsByUserId = async (userId) => {
-  try {
-    const [comics, fields] = await pool.query(
-      `SELECT * FROM comics WHERE user_id = ?`,
-      [userId]
-    );
-
-    return comics.length > 0 ? convertToCamelCase(comics) : [];
-  } catch (error) {
-    console.log("Error: ", error);
-    return [];
-  }
-};
-
-const createComic = async (comic) => {
-  try {
-    const [result, fields] = await pool.query(
-      `INSERT INTO comics (name, sub_name, cover, status, author, translator, description, name_minio, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        comic.name,
-        comic.subName,
-        comic.cover,
-        comic.status,
-        comic.author,
-        comic.translator,
-        comic.description,
-        comic.nameMinio,
-        comic.userId,
-      ]
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    const newComicId = result.insertId;
-
-    return { success: true, newComicId: newComicId };
-  } catch (error) {
-    console.log("Error createComic: ", error);
-    return { success: false };
-  }
-};
-
-const updateComic = async (comic) => {
-  try {
-    const [result, fields] = await pool.query(
-      `UPDATE comics SET name = ?, sub_name = ?, cover = ?, status = ?, author = ?, translator = ?, description = ?, name_minio = ? WHERE id = ?`,
-      [
-        comic.name,
-        comic.subName,
-        comic.cover,
-        comic.status,
-        comic.author,
-        comic.translator,
-        comic.description,
-        comic.nameMinio,
-        comic.id,
-      ]
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error updateComic: ", error);
-    return { success: false };
-  }
-};
-
-const deleteComicByComicId = async (comicId) => {
-  try {
-    const [result, fields] = await pool.query(
-      `DELETE FROM comics WHERE id = ?`,
-      [comicId]
-    );
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error deleteComicByComicId: ", error);
-    return { success: false };
-  }
-};
-
-const getComicRatingByUserId = async (comicId, userId) => {
-  try {
-    const [comicRating, fields] = await pool.query(
-      `SELECT * FROM comic_ratings WHERE user_id = ? AND comic_id = ?`,
-      [userId, comicId]
-    );
-
-    return comicRating.length > 0 ? convertToCamelCase(comicRating[0]) : {};
-  } catch (error) {
-    console.log("Error: ", error);
-    return {};
-  }
-};
-
-const createComicRating = async (comicId, userId, rating) => {
-  try {
-    const result = await pool.query(
-      `INSERT INTO comic_ratings (user_id, comic_id, rating) VALUES (?, ?, ?)`,
-      [userId, comicId, rating]
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error createComicRating: ", error);
-    return { success: false };
-  }
-};
-
-const updateComicRating = async (comicId, userId, rating) => {
-  try {
-    const [result] = await pool.query(
-      `UPDATE comic_ratings SET rating = ? WHERE user_id = ? AND comic_id = ?`,
-      [rating, userId, comicId]
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error updateComicRating: ", error);
-    return { success: false };
-  }
-};
-
-const deleteComicRating = async (comicId, userId) => {
-  try {
-    const [result] = await pool.query(
-      `DELETE FROM comic_ratings WHERE user_id = ? AND comic_id = ?`,
-      [userId, comicId]
-    );
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error deleteComicRating: ", error);
-    return { success: false };
-  }
-};
-
-const getComicBookmarkByUserId = async (comicId, userId) => {
-  try {
-    const [comicBookmark, fields] = await pool.query(
-      `SELECT * FROM bookmark_comics_users WHERE user_id = ? AND comic_id = ?`,
-      [userId, comicId]
-    );
-
-    return comicBookmark.length > 0 ? convertToCamelCase(comicBookmark[0]) : {};
-  } catch (error) {
-    console.log("Error getComicBookmarkByUserId: ", error);
-    return {};
-  }
-};
-
-const createComicBookmark = async (comicId, userId) => {
-  try {
-    const [result, fields] = await pool.query(
-      `INSERT INTO bookmark_comics_users (user_id, comic_id) VALUES (?, ?)`,
-      [userId, comicId]
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error createComicBookmark: ", error);
-    return { success: false };
-  }
-};
-
-const deleteComicBookmark = async (comicId, userId) => {
-  try {
-    const [result, fields] = await pool.query(
-      `DELETE FROM bookmark_comics_users WHERE user_id = ? AND comic_id = ?`,
-      [userId, comicId]
-    );
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error deleteComicBookmark: ", error);
-    return { success: false };
-  }
-};
-
-const getGenresByComicId = async (comicId) => {
-  try {
-    const [genres, fields] = await pool.query(
-      `SELECT gen.* FROM genres gen
-      INNER JOIN comics_genres cg ON gen.id = cg.genre_id
-      WHERE cg.comic_id = ?
-      ORDER BY gen.title ASC`,
-      [comicId]
-    );
-
-    return genres.length > 0 ? convertToCamelCase(genres) : [];
-  } catch (error) {
-    console.log("Error getGenresByComicId: ", error);
-    return [];
-  }
-};
-
-const getAllGenres = async () => {
-  try {
-    const [genres, fields] = await pool.query(
-      `SELECT * FROM genres ORDER BY title ASC`
-    );
-
-    return genres.length > 0 ? convertToCamelCase(genres) : [];
-  } catch (error) {
-    console.log("Error getAllGenres: ", error);
-    return [];
-  }
-};
-
-const createGenresComics = async (comicId, genres) => {
-  try {
-    if (genres.length === 0) return { success: true };
-
-    const values = genres
-      .map((genreId) => `(${comicId}, ${genreId})`)
-      .join(", ");
-    const [result] = await pool.query(
-      `INSERT INTO comics_genres (comic_id, genre_id) VALUES ${values}`
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error createGenresComics: ", error);
-    return { success: false };
-  }
-};
-
-const updateGenresComics = async (comicId, genres) => {
-  try {
-    await pool.query(`DELETE FROM comics_genres WHERE comic_id = ?`, [comicId]);
-
-    const values = genres
-      .map((genreId) => `(${comicId}, ${genreId})`)
-      .join(", ");
-
-    const [result] = await pool.query(
-      `INSERT INTO comics_genres (comic_id, genre_id) VALUES ${values}`
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error updateGenresComics: ", error);
-    return { success: false };
-  }
-};
-
-const deleteGenresComics = async (comicId) => {
-  try {
-    const [result] = await pool.query(
-      `DELETE FROM comics_genres WHERE comic_id = ?`,
-      [comicId]
-    );
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error deleteGenresComics: ", error);
-    return { success: false };
-  }
-};
-
-const getListComics = async ({
+const getComicsService = async ({
+  page = 1,
   limit = 0,
-  orderBy = "publish_at",
-  ascending = false,
-  page = 0,
+  orderBy = "created_at",
+  sortType = "ASC",
 }) => {
-  try {
-    const validOrderByColumns = [
-      "views",
-      "rating",
-      "bookmarks",
-      "update_at",
-      "publish_at",
-    ];
-    if (!validOrderByColumns.includes(orderBy)) {
-      throw new Error(`Invalid orderBy column: ${orderBy}`);
+  const { count, comics } = await databaseService.getComics({
+    page: Number(page),
+    limit: Number(limit),
+    orderBy,
+    sortType,
+  });
+
+  const comicsWithLatestChapter = await Promise.all(
+    comics.map(async (comic) => {
+      const { chapter: latestChapter } =
+        await databaseService.getLatestChapterByComicId({ comicId: comic.id });
+
+      return {
+        ...comic,
+        latestChapter,
+      };
+    })
+  );
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy danh sách truyện thành công",
+    comics: comicsWithLatestChapter,
+    count,
+  };
+};
+
+const getComicByComicIdService = async ({ comicId, authId }) => {
+  const results = await Promise.all([
+    databaseService.getComicByComicId({ comicId }),
+    databaseService.getGenresForComicByComicId({
+      comicId,
+      page: 1,
+      limit: 0,
+      orderBy: "name",
+      sortType: "DESC",
+    }),
+    ...(authId
+      ? [
+          databaseService.getRatingByUserForComic({ comicId, authId }),
+          databaseService.getBookmarkByUserForComic({ comicId, authId }),
+        ]
+      : []),
+  ]);
+
+  const comicResult = results[0];
+  const genresResult = results[1];
+  const ratingResult = authId ? results[2] : null;
+  const bookmarkResult = authId ? results[3] : null;
+
+  if (isEmpty(comicResult.comic)) {
+    return {
+      code: 404,
+      success: false,
+      message: "Truyện không tồn tại",
+    };
+  }
+
+  const comicInfo = {
+    ...comicResult.comic,
+    genres: genresResult.genres,
+    ...(authId
+      ? {
+          authRating: !isEmpty(ratingResult.rating),
+          authBookmark: !isEmpty(bookmarkResult.bookmark),
+        }
+      : {}),
+  };
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy thông tin truyện thành công",
+    comic: comicInfo,
+  };
+};
+
+const createComicService = async ({ userId, coverFile, comicInfo }) => {
+  const coverBucket = "covers";
+  let nameMinio = formatPath(comicInfo.name);
+
+  // Handle create bucket and cover in Minio
+  const nameOrigin = nameMinio;
+  let isCoverExists = await databaseService.imageExists(
+    coverBucket,
+    `${nameMinio}.jpg`
+  );
+
+  while (isCoverExists.success && isCoverExists.existed) {
+    const random = Math.floor(1000 + Math.random() * 9000);
+    nameMinio = `${nameOrigin}-${random}`;
+    isCoverExists = await databaseService.imageExists(
+      coverBucket,
+      `${nameMinio}.jpg`
+    );
+  }
+
+  const [createBucketResult, uploadImageResult] = await Promise.all([
+    databaseService.createBucket(nameMinio),
+    databaseService.uploadImage(coverBucket, `${nameMinio}.jpg`, coverFile),
+  ]);
+
+  // Handle create comic
+  if (createBucketResult.success && uploadImageResult.success) {
+    const comic = {
+      cover: uploadImageResult.fileUrl,
+      userId,
+      nameMinio,
+      ...comicInfo,
+    };
+
+    const resultCreateComic = await databaseService.createComic({
+      comicInfo: comic,
+    });
+
+    if (!resultCreateComic.created) {
+      return {
+        code: 409,
+        success: false,
+        message: "Tên truyện đã tồn tại",
+      };
     }
 
-    const orderDirection = ascending ? "ASC" : "DESC";
-    const offset = page * limit;
+    // Handle create genres for comic
+    const resultCreateComicGenres =
+      await databaseService.createOrUpdateGenresForComicByComicId({
+        comicId: resultCreateComic.comic.id,
+        genreIds: comicInfo.genres,
+      });
 
-    const [comics, fields] = await pool.query(
-      `SELECT * FROM comics ORDER BY ${orderBy} ${orderDirection} LIMIT ? OFFSET ?`,
-      [limit, offset]
+    return {
+      code: 200,
+      success: true,
+      message: "Tạo truyện thành công",
+      comic: resultCreateComic.comic,
+      genres: resultCreateComicGenres.genres,
+    };
+  }
+};
+
+const updateComicByComicIdService = async ({
+  userId,
+  comicId,
+  coverFile,
+  comicInfo,
+  oldComicInfo,
+}) => {
+  let coverUrl = "";
+  let nameMinio = formatPath(comicInfo.name);
+  const coverBucket = "covers";
+
+  // Handle remove old cover
+  const oldCoverName = oldComicInfo.cover.split("/").pop();
+  const removeImageResult = await databaseService.removeImage(
+    coverBucket,
+    oldCoverName
+  );
+
+  if (!removeImageResult.success) {
+    return errorSystemResponse;
+  }
+
+  // Handle when change name of Comic
+  if (oldComicInfo.nameMinio !== nameMinio) {
+    const nameOrigin = nameMinio;
+    let isCoverExists = await databaseService.imageExists(
+      coverBucket,
+      `${nameMinio}.jpg`
     );
 
-    return comics.length > 0 ? convertToCamelCase(comics) : [];
-  } catch (error) {
-    console.log("Error: ", error);
-    return [];
+    while (isCoverExists.success && isCoverExists.existed) {
+      const random = Math.floor(1000 + Math.random() * 9000);
+      nameMinio = `${nameOrigin}-${random}`;
+      isCoverExists = await databaseService.imageExists(
+        coverBucket,
+        `${nameMinio}.jpg`
+      );
+    }
+
+    // Rename bucket and upload cover
+    const [renameResult, uploadResult] = await Promise.all([
+      databaseService.renameBucket(oldComicInfo.nameMinio, nameMinio),
+      databaseService.uploadImage(coverBucket, `${nameMinio}.jpg`, coverFile),
+    ]);
+    coverUrl = uploadResult.fileUrl;
+
+    if (!renameResult.success || !uploadResult.success) {
+      return errorSystemResponse;
+    }
+  } else {
+    const [uploadResult] = await Promise.all([
+      databaseService.uploadImage(coverBucket, oldCoverName, coverFile),
+    ]);
+
+    if (!uploadResult.success) {
+      return errorSystemResponse;
+    }
+
+    coverUrl = uploadResult.fileUrl;
   }
+
+  // Handle update comic
+  const comic = {
+    id: comicId,
+    cover: coverUrl,
+    userId,
+    nameMinio,
+    ...comicInfo,
+  };
+
+  const resultUpdateComic = await databaseService.updateComicByComicId({
+    comicInfo: comic,
+  });
+
+  if (!resultUpdateComic.updated) {
+    return {
+      code: 404,
+      success: false,
+      message: "Truyện không tồn tại",
+    };
+  }
+
+  // Handle update genres for comic
+  const resultUpdateComicGenres =
+    await databaseService.createOrUpdateGenresForComicByComicId({
+      comicId,
+      genreIds: comicInfo.genres,
+    });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Cập nhật truyện thành công",
+    comic,
+    genres: resultUpdateComicGenres.genres,
+  };
+};
+
+const deleteComicByComicIdService = async ({ comicId }) => {
+  // const { deleted } = await databaseService.deleteComicByComicId({ comicId });
+
+  // Check if comic still has chapter
+  const { existed: isStillChapterExists } =
+    await databaseService.checkChapterExistsByComicId({ comicId });
+
+  if (isStillChapterExists) {
+    return {
+      code: 400,
+      success: false,
+      message: "Truyện vẫn còn chương, không thể xóa",
+    };
+  }
+
+  // Delete genres of comic
+  const [{ deleted: deleteGenresComicsResult }] = await Promise.all([
+    databaseService.deleteGenresForComicByComicId({ comicId }),
+  ]);
+
+  if (deleteGenresComicsResult) {
+    // Get comic info
+    const [{ comic }] = await Promise.all([
+      databaseService.getComicByComicId({ comicId }),
+    ]);
+
+    const coverBucket = "covers";
+    const coverName = comic.cover.split("/").pop();
+
+    // Delete comic, remove image and bucket in Minio
+    const [deleteComicResult, removeImageResult, deleteBucketResult] =
+      await Promise.all([
+        databaseService.deleteComicByComicId({ comicId }),
+        databaseService.removeImage(coverBucket, coverName),
+        databaseService.removeBucket(comic.nameMinio),
+      ]);
+
+    if (
+      deleteComicResult.deleted &&
+      removeImageResult.success &&
+      deleteBucketResult.success
+    ) {
+      return {
+        code: 200,
+        success: true,
+        message: "Xóa truyện thành công",
+      };
+    }
+  }
+};
+
+const getRatingByUserForComicService = async ({ comicId, userId }) => {
+  const { rating } = await databaseService.getRatingByUserForComic({
+    comicId,
+    userId,
+  });
+
+  if (isEmpty(rating)) {
+    return {
+      code: 404,
+      success: false,
+      message: "Rating không tồn tại",
+    };
+  }
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy rating thành công",
+    rating,
+  };
+};
+
+const createOrUpdateRatingByUserForComicService = async ({
+  userId,
+  comicId,
+  ratingData,
+}) => {
+  const { rating, created } =
+    await databaseService.createOrUpdateRatingByUserForComic({
+      comicId,
+      userId,
+      ratingData,
+    });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Cập nhật đánh giá thành công",
+    rating,
+  };
+};
+
+const deleteRatingByUserForComicService = async ({ comicId, userId }) => {
+  const { deleted } = await databaseService.deleteRatingByUserForComic({
+    comicId,
+    userId,
+  });
+
+  if (!deleted) {
+    return {
+      code: 404,
+      success: false,
+      message: "Đánh giá không tồn tại",
+    };
+  }
+
+  return {
+    code: 200,
+    success: true,
+    message: "Xóa rating thành công",
+  };
+};
+
+const createBookmarkByUserForComicService = async ({ comicId, userId }) => {
+  const { bookmark, created } =
+    await databaseService.createBookmarkByUserForComic({ comicId, userId });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Bookmark thành công",
+    bookmark,
+  };
+};
+
+const deleteBookmarkByUserForComicService = async ({ comicId, userId }) => {
+  const { deleted } = await databaseService.deleteBookmarkByUserForComic({
+    comicId,
+    userId,
+  });
+
+  if (!deleted) {
+    return {
+      code: 404,
+      success: false,
+      message: "Bookmark không tồn tại",
+    };
+  }
+
+  return {
+    code: 200,
+    success: true,
+    message: "Xóa bookmark thành công",
+  };
+};
+
+const getGenresForComicByComicIdService = async ({ comicId }) => {
+  const { count, genres } = await databaseService.getGenresForComicByComicId({
+    comicId,
+  });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy genres thành công",
+    genres,
+  };
+};
+
+const createOrUpdateGenresForComicByComicIdService = async ({
+  comicId,
+  genreIds,
+}) => {
+  const { genres } =
+    await databaseService.createOrUpdateGenresForComicByComicId({
+      comicId,
+      genreIds,
+    });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Cập nhật genres thành công",
+    genres,
+  };
+};
+
+const deleteGenresForComicByComicIdService = async ({ comicId }) => {
+  const { deleted } = await databaseService.deleteGenresForComicByComicId({
+    comicId,
+  });
+
+  if (!deleted) {
+    return {
+      code: 404,
+      success: false,
+      message: "Genres không tồn tại",
+    };
+  }
+
+  return {
+    code: 200,
+    success: true,
+    message: "Xóa genres thành công",
+  };
+};
+
+const getComicsByUserIdService = async ({
+  userId,
+  page = 1,
+  limit = 0,
+  orderBy = "created_at",
+  sortType = "ASC",
+}) => {
+  const { count, comics } = await databaseService.getComicsByUserId({
+    userId,
+    page,
+    limit,
+    orderBy,
+    sortType,
+  });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy thông tin truyện của user thành công",
+    comics,
+    count,
+  };
 };
 
 module.exports = {
-  createComic,
-  updateComic,
-  getAllGenres,
-  getComicById,
-  getListComics,
-  getComicsByUserId,
-  createComicRating,
-  updateComicRating,
-  deleteComicRating,
-  createGenresComics,
-  updateGenresComics,
-  deleteGenresComics,
-  getGenresByComicId,
-  createComicBookmark,
-  deleteComicBookmark,
-  deleteComicByComicId,
-  getComicRatingByUserId,
-  getComicBookmarkByUserId,
+  getComicsService,
+  getComicByComicIdService,
+  createComicService,
+  updateComicByComicIdService,
+  deleteComicByComicIdService,
+  getRatingByUserForComicService,
+  createOrUpdateRatingByUserForComicService,
+  deleteRatingByUserForComicService,
+  createBookmarkByUserForComicService,
+  deleteBookmarkByUserForComicService,
+  getGenresForComicByComicIdService,
+  createOrUpdateGenresForComicByComicIdService,
+  deleteGenresForComicByComicIdService,
+  getComicsByUserIdService,
 };

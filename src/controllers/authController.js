@@ -1,18 +1,13 @@
-const userServices = require("../services/userServices");
+const services = require("../services");
 
 const handleLogin = async (req, res, next) => {
   const { username, password } = req.body;
 
   try {
-    const { code, success, message, refreshToken, ...rest } =
-      await userServices.loginService(username, password);
-
-    // Set cookie refreshToken
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false, // true for https, false for http
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    const { code, success, message, ...rest } = await services.loginService(
+      username,
+      password
+    );
 
     return res.status(code).json({ code, success, message, data: rest });
   } catch (error) {
@@ -28,8 +23,11 @@ const handleRegister = async (req, res, next) => {
   const { username, password, email } = req.body;
 
   try {
-    const { code, success, message, ...rest } =
-      await userServices.registerService(username, email, password);
+    const { code, success, message, ...rest } = await services.registerService(
+      username,
+      email,
+      password
+    );
 
     return res.status(code).json({ code, success, message, data: rest });
   } catch (error) {
@@ -46,7 +44,7 @@ const handleForgotPassword = async (req, res, next) => {
 
   try {
     const { code, success, message, ...rest } =
-      await userServices.forgotPasswordService(email);
+      await services.forgotPasswordService(email);
 
     return res.status(code).json({ code, success, message, data: rest });
   } catch (error) {
@@ -63,11 +61,30 @@ const handleResetPassword = async (req, res, next) => {
 
   try {
     const { code, success, message, ...rest } =
-      await userServices.resetPasswordService(verificationCode, password);
+      await services.resetPasswordService(verificationCode, password);
 
     return res.status(code).json({ code, success, message, data: rest });
   } catch (error) {
     console.log("Error handleResetPassword: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
+};
+
+const handleResetAccessToken = async (req, res, next) => {
+  const { refreshToken } = req.body;
+
+  try {
+    const { code, success, message, ...rest } =
+      await services.resetAccessTokenService(refreshToken);
+
+    return res
+      .status(code)
+      .json({ code, success, message, data: rest.accessToken });
+  } catch (error) {
+    console.log("Error handleResetAccessToken: ", error.message);
 
     return res
       .status(500)
@@ -80,4 +97,5 @@ module.exports = {
   handleRegister,
   handleResetPassword,
   handleForgotPassword,
+  handleResetAccessToken,
 };

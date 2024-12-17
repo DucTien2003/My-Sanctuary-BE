@@ -16,7 +16,7 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      index: {
+      number_order: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
@@ -45,6 +45,11 @@ module.exports = (sequelize) => {
       tableName: "chapters",
       timestamps: true, // Tự động xử lý createdAt và updatedAt
       underscored: true, // Tự động chuyển cột thành snake_case
+      indexes: [
+        {
+          fields: ["comic_id"], // Khai báo index cho cột comic_id
+        },
+      ],
     }
   );
 

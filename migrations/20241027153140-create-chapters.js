@@ -54,9 +54,20 @@ module.exports = {
         ),
       },
     });
+
+    await queryInterface.addIndex("chapters", ["comic_id"], {
+      name: "index_chapters_on_comic_id",
+    });
   },
 
   async down(queryInterface, Sequelize) {
+    await queryInterface.sequelize.query(`
+      ALTER TABLE chapters
+      DROP FOREIGN KEY chapters_ibfk_1;
+    `);
+
+    await queryInterface.removeIndex("chapters", "index_chapters_on_comic_id");
+
     await queryInterface.dropTable("chapters");
   },
 };

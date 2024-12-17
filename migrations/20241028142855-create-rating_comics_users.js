@@ -4,11 +4,6 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("rating_comics_users", {
-      id: {
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
-        primaryKey: true,
-      },
       rating: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -45,6 +40,13 @@ module.exports = {
           "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
         ),
       },
+    });
+
+    // Thiết lập composite primary key cho comic_id và user_id
+    await queryInterface.addConstraint("rating_comics_users", {
+      fields: ["comic_id", "user_id"],
+      type: "primary key",
+      name: "rating_comics_users_pk",
     });
   },
 

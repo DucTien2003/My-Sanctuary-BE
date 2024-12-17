@@ -1,5 +1,6 @@
-const { minioClient, policyMinio } = require("../../config/minIO");
-const { sortByLastNumber, removeEndSlash } = require("../../utils");
+const { rename } = require("fs");
+const { minioClient, policyMinio } = require("../../../config/minIO");
+const { sortByLastNumber, removeEndSlash } = require("../../../utils");
 
 // Create a bucket
 const createBucket = async (bucketName) => {
@@ -44,11 +45,11 @@ const listBuckets = async () => {
 // Check exists of a bucket
 const bucketExists = async (bucketName) => {
   try {
-    const exists = await minioClient.bucketExists(bucketName);
-    return exists;
+    const existed = await minioClient.bucketExists(bucketName);
+    return { success: true, existed };
   } catch (err) {
     console.error(`Error checking if bucket ${bucketName} exists:`, err);
-    return false;
+    return { success: false, error: err };
   }
 };
 
@@ -77,7 +78,7 @@ const getListChapters = async (bucketName, prefix = "", recursive = false) => {
       removeEndSlash(object.prefix)
     );
 
-    return { success: true, list: sortByLastNumber(chapterNames, true) };
+    return { success: true, chapters: sortByLastNumber(chapterNames, true) };
   } catch (err) {
     console.error("Error listing chapters:", err);
     return { success: false, error: err };
@@ -94,7 +95,7 @@ const listObjectsV2 = async (bucketName, prefix = "", recursive = false) => {
       objects.push(obj);
     }
 
-    return { success: true, list: objects };
+    return { success: true, objects: objects };
   } catch (err) {
     console.error("Error listing objects V2:", err);
     return { success: false, error: err };
@@ -140,7 +141,7 @@ const renameBucket = async (oldName, newName) => {
       }
     });
 
-    return { success: true };
+    return { success: true, renamed: true };
   } catch (err) {
     console.error(`Error renaming bucket ${oldName} to ${newName}:`, err);
     return { success: false, error: err };
@@ -165,7 +166,7 @@ const listIncompleteUploads = async (
       uploads.push(upload);
     }
 
-    return { success: true, list: uploads };
+    return { success: true, uploads: uploads };
   } catch (err) {
     console.error("Error listing incomplete uploads:", err);
     return { success: false, error: err };

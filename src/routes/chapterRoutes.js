@@ -6,30 +6,24 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const {
-  handleCreateChapter,
-  handleUpdateChapter,
-  handleGetChapterById,
-  handleDeleteChapterById,
-  handleUpdateChapterViews,
   handleGetImagesOfChapter,
-  handleGetAllChaptersByComicId,
+  handleGetChapterByChapterId,
+  handleUpdateChapterViewsByChapterId,
+  handleCreateChapter,
+  handleUpdateChapterByChapterId,
+  handleDeleteChapterByChapterId,
 } = require("../controllers/chapterController.js");
 
 const router = express.Router();
 
-// Get chapter
-router.get("/:chapterId", handleGetChapterById);
-// Create chapter
-router.post("/", authenticateToken, upload.any(), handleCreateChapter);
-// Update chapter
-router.put("/:chapterId", authenticateToken, upload.any(), handleUpdateChapter);
-// Delete chapter
-router.delete("/:chapterId", authenticateToken, handleDeleteChapterById);
-// Get chapter images
-// router.get("/:chapterId/all-images", handleGetImagesOfChapter);
-// Update chapter views
-router.put("/:chapterId/update-views", handleUpdateChapterViews);
-// Get chapters by comic id
-// router.get("/:comicId/comic-chapters", handleGetAllChaptersByComicId);
+router.post("/", upload.any(), handleCreateChapter);
+
+router.get("/:chapterId", handleGetChapterByChapterId);
+router.delete("/:chapterId", handleDeleteChapterByChapterId);
+router.put("/:chapterId", upload.any(), handleUpdateChapterByChapterId);
+
+router.put("/:chapterId/views", handleUpdateChapterViewsByChapterId);
+
+router.get("/:chapterId/images", handleGetImagesOfChapter);
 
 module.exports = router;

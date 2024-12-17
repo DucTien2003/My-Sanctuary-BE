@@ -4,11 +4,6 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("comics_genres", {
-      id: {
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
-        primaryKey: true,
-      },
       comic_id: {
         type: Sequelize.UUID,
         allowNull: false,
@@ -42,9 +37,35 @@ module.exports = {
         ),
       },
     });
+
+    // Thiết lập composite primary key cho `comic_id` và `genre_id`
+    await queryInterface.addConstraint("comics_genres", {
+      fields: ["comic_id", "genre_id"],
+      type: "primary key",
+      name: "comics_genres_pk",
+    });
+
+    await queryInterface.addIndex("comics_genres", ["comic_id"], {
+      name: "index_comics_genres_on_comic_id",
+    });
   },
 
   async down(queryInterface, Sequelize) {
+    await queryInterface.sequelize.query(`
+      ALTER TABLE comics_genres
+      DROP FOREIGN KEY comics_genres_ibfk_1;
+    `);
+
+    await queryInterface.sequelize.query(`
+      ALTER TABLE comics_genres
+      DROP FOREIGN KEY comics_genres_ibfk_2;
+    `);
+
+    await queryInterface.removeIndex(
+      "comics_genres",
+      "index_comics_genres_on_comic_id"
+    );
+
     await queryInterface.dropTable("comics_genres");
   },
 };

@@ -58,6 +58,11 @@ module.exports = {
         allowNull: false,
         defaultValue: 0,
       },
+      number_of_chapters: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
       name_minio: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -89,6 +94,11 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
+    await queryInterface.sequelize.query(`
+      ALTER TABLE comics
+      DROP FOREIGN KEY comics_ibfk_1;
+    `);
+
     await queryInterface.dropTable("comics");
   },
 };

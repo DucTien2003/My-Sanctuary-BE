@@ -3,27 +3,23 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("rating_comics_users", {
-      id: {
-        type: Sequelize.STRING,
-        primaryKey: true,
-      },
-      rating: {
-        type: Sequelize.INTEGER,
+    await queryInterface.createTable("like_dislike_comments", {
+      like_dislike: {
+        type: Sequelize.ENUM("like", "dislike"),
         allowNull: false,
       },
-      comic_id: {
-        type: Sequelize.STRING,
+      comment_id: {
+        type: Sequelize.UUID,
         allowNull: false,
         references: {
-          model: "comics",
+          model: "comments",
           key: "id",
         },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       },
       user_id: {
-        type: Sequelize.STRING,
+        type: Sequelize.UUID,
         allowNull: false,
         references: {
           model: "users",
@@ -45,9 +41,16 @@ module.exports = {
         ),
       },
     });
+
+    // Composite primary key
+    await queryInterface.addConstraint("like_dislike_comments", {
+      fields: ["comment_id", "user_id"],
+      type: "primary key",
+      name: "like_dislike_comments_pk",
+    });
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("rating_comics_users");
+    await queryInterface.dropTable("like_dislike_comments");
   },
 };

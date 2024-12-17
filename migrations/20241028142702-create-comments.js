@@ -13,6 +13,16 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: false,
       },
+      likes: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      dislikes: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
       left_value: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -20,6 +30,11 @@ module.exports = {
       right_value: {
         type: Sequelize.INTEGER,
         allowNull: false,
+      },
+      root: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
       },
       user_id: {
         type: Sequelize.UUID,
@@ -43,7 +58,7 @@ module.exports = {
       },
       chapter_id: {
         type: Sequelize.UUID,
-        allowNull: false,
+        allowNull: true,
         references: {
           model: "chapters",
           key: "id",
@@ -64,9 +79,39 @@ module.exports = {
         ),
       },
     });
+
+    await queryInterface.addIndex("comments", ["comic_id"], {
+      name: "index_comments_on_comic_id",
+    });
+
+    await queryInterface.addIndex("comments", ["chapter_id"], {
+      name: "index_comments_on_chapter_id",
+    });
   },
 
   async down(queryInterface, Sequelize) {
+    await queryInterface.sequelize.query(`
+      ALTER TABLE comments
+      DROP FOREIGN KEY comments_ibfk_1;
+    `);
+
+    await queryInterface.sequelize.query(`
+      ALTER TABLE comments
+      DROP FOREIGN KEY comments_ibfk_2;
+    `);
+
+    await queryInterface.sequelize.query(`
+      ALTER TABLE comments
+      DROP FOREIGN KEY comments_ibfk_3;
+    `);
+
+    await queryInterface.removeIndex("comments", "index_comments_on_comic_id");
+
+    await queryInterface.removeIndex(
+      "comments",
+      "index_comments_on_chapter_id"
+    );
+
     await queryInterface.dropTable("comments");
   },
 };

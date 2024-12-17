@@ -7,11 +7,11 @@ module.exports = (sequelize) => {
 
   RatingComicUser.init(
     {
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: () => uuidv4(),
-        primaryKey: true,
-      },
+      // id: {
+      //   type: DataTypes.UUID,
+      //   defaultValue: () => uuidv4(),
+      //   primaryKey: true,
+      // },
       rating: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -19,10 +19,12 @@ module.exports = (sequelize) => {
       comic_id: {
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true,
       },
       user_id: {
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true,
       },
     },
     {

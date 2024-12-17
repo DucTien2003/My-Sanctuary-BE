@@ -2,18 +2,34 @@ const express = require("express");
 const authenticateToken = require("../middleware/authenticateToken.js");
 
 const {
-  handleComment,
-  handleLikeDislike,
-  handleReplyComment,
-  handleUpdateLikeDislike,
-  handleDeleteLikeDislike,
-  handleGetAllCommentsByComicId,
+  handleCreateComment,
+  handleCreateReplyComment,
+  handleLikeDislikeComment,
+  handleGetCommentByCommentId,
+  handleGetCommentAndRepliesByCommentId,
+  handleDeleteLikeDislikeComment,
 } = require("../controllers/commentController.js");
 
 const router = express.Router();
 
-// Create comment
-router.post("/", authenticateToken, handleComment);
+router.post("/", authenticateToken, handleCreateComment);
+router.post("/reply", authenticateToken, handleCreateReplyComment);
+router.get("/:commentId", handleGetCommentByCommentId);
+router.get(
+  "/:commentId/comment-replies",
+  handleGetCommentAndRepliesByCommentId
+);
+
+router.post(
+  "/:commentId/like-dislike",
+  authenticateToken,
+  handleLikeDislikeComment
+);
+router.delete(
+  "/:commentId/like-dislike",
+  authenticateToken,
+  handleDeleteLikeDislikeComment
+);
 
 // router.get("/comic-comments/:comicId", handleGetAllCommentsByComicId);
 // router.post("/reply-comment/:parentId", authenticateToken, handleReplyComment);

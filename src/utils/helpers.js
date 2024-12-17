@@ -1,4 +1,5 @@
 const _ = require("lodash");
+const databaseService = require("../services/databaseService");
 
 const convertToCamelCase = (obj) => {
   if (_.isArray(obj)) {
@@ -38,13 +39,13 @@ const isEmpty = (value) => {
 };
 
 // Sort by last number of string
-const sortByLastNumber = (arr, ascending = false) => {
+const sortByLastNumber = (arr, sortType = false) => {
   return arr.sort((a, b) => {
     // Split the string by spaces and get the last element
     const numA = parseFloat(a.split(" ").pop());
     const numB = parseFloat(b.split(" ").pop());
 
-    return ascending ? numB - numA : numA - numB;
+    return sortType ? numB - numA : numA - numB;
   });
 };
 

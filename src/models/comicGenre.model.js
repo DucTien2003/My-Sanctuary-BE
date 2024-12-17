@@ -7,18 +7,32 @@ module.exports = (sequelize) => {
 
   ComicGenre.init(
     {
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: () => uuidv4(),
-        primaryKey: true,
-      },
+      // id: {
+      //   type: DataTypes.UUID,
+      //   defaultValue: () => uuidv4(),
+      //   primaryKey: true,
+      // },
       comic_id: {
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true,
+        // references: {
+        //   model: "comics",
+        //   key: "id",
+        // },
+        // onUpdate: "CASCADE",
+        // onDelete: "CASCADE",
       },
       genre_id: {
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true,
+        // references: {
+        //   model: "genres",
+        //   key: "id",
+        // },
+        // onUpdate: "CASCADE",
+        // onDelete: "CASCADE",
       },
     },
     {

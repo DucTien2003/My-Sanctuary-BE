@@ -1,241 +1,133 @@
-const { uploadImage, removeChapter } = require("../services/minIOServices");
-
-const {
-  createImages,
-  createChapter,
-  getChapterById,
-  updateChapterViews,
-  getImagesByChapterId,
-  checkChapterIndexExists,
-  deleteImagesByChapterId,
-  getAllChaptersByComicId,
-  updateChapterByChapterId,
-  deleteChapterByChapterId,
-} = require("../services/chapterServices");
+// const { uploadImage, removeChapter } = require("../services/minIOServices");
+const services = require("../services");
 
 const handleGetImagesOfChapter = async (req, res) => {
   const chapterId = req.params.chapterId;
 
-  getImagesByChapterId(chapterId)
-    .then((images) => {
-      return res.json(images);
-    })
-    .catch((error) => {
-      console.log("Error handleGetImagesOfChapter: ", error);
-      return res.status(500).json([]);
-    });
+  try {
+    const { code, success, message, ...data } =
+      await services.getImagesByChapterIdService({ chapterId });
+
+    return res.status(code).json({ code, success, message, data: data });
+  } catch (error) {
+    console.log("Error handleGetImagesOfChapter: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
-const handleGetChapterById = async (req, res) => {
+const handleGetChapterByChapterId = async (req, res) => {
   const chapterId = req.params.chapterId;
 
-  getChapterById(chapterId)
-    .then((chapters) => {
-      return res.json(chapters);
-    })
-    .catch((error) => {
-      console.log("Error handleGetChapterById: ", error);
-      return res.status(500).json({});
-    });
+  try {
+    const { code, success, message, ...data } =
+      await services.getChapterByChapterIdService({ chapterId });
+
+    return res.status(code).json({ code, success, message, data: data });
+  } catch (error) {
+    console.log("Error handleGetChapterByChapterId: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
-const handleGetAllChaptersByComicId = async (req, res) => {
-  const comicId = req.params.comicId;
-
-  getAllChaptersByComicId(comicId)
-    .then((chapters) => {
-      return res.json(chapters);
-    })
-    .catch((error) => {
-      console.log("Error handleGetAllChaptersByComicId: ", error);
-      return res.status(500).json([]);
-    });
-};
-
-const handleUpdateChapterViews = async (req, res) => {
+const handleUpdateChapterViewsByChapterId = async (req, res) => {
   const chapterId = req.params.chapterId;
 
-  updateChapterViews(chapterId)
-    .then((result) => {
-      return res.json(result);
-    })
-    .catch((error) => {
-      console.log("Error handleUpdateChapterViews: ", error);
-      return res.status(500).json(false);
-    });
+  try {
+    const { code, success, message, ...data } =
+      await services.updateChapterViewsByChapterIdService({ chapterId });
+
+    return res.status(code).json({ code, success, message, data: data });
+  } catch (error) {
+    console.log("Error handleUpdateChapterViewsByChapterId: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
 };
 
 const handleCreateChapter = async (req, res) => {
   const imageFiles = req.files;
-  const { index, name } = req.body;
   const comicInfo = JSON.parse(req.body.comicInfo);
-  const chapterNameMinio = "chapter-" + index;
-
-  const chapterIndexExists = await checkChapterIndexExists(comicInfo.id, index);
-
-  if (chapterIndexExists) {
-    return res.json({
-      success: false,
-      error: "Chapter index exists",
-      isExists: true,
-    });
-  }
+  const chapterData = JSON.parse(req.body.chapterData);
 
   try {
-    const [createChapterResult] = await Promise.all([
-      createChapter({
-        index,
-        name,
-        nameMinio: chapterNameMinio,
-        comicId: comicInfo.id,
-      }),
-    ]);
-
-    if (createChapterResult.success) {
-      const chapterId = createChapterResult.insertId;
-      const imagesInfo = [];
-
-      const uploadImagePromises = imageFiles.map(async (imageFile, index) => {
-        const uploadImageResult = await uploadImage(
-          comicInfo.nameMinio,
-          chapterNameMinio + `/page-${index + 1}`,
-          imageFile
-        );
-
-        imagesInfo.push({
-          index: index + 1,
-          url: uploadImageResult.fileUrl,
-          chapterId,
-        });
+    const { code, success, message, ...data } =
+      await services.createChapterService({
+        imageFiles,
+        comicInfo,
+        chapterData,
       });
 
-      await Promise.all(uploadImagePromises);
-
-      const createImagesResult = await createImages(imagesInfo);
-
-      if (createImagesResult.success) {
-        return res.json({ success: true });
-      } else {
-        return res.json({ success: false });
-      }
-    } else {
-      return res.json({ success: false });
-    }
+    return res.status(code).json({ code, success, message, data });
   } catch (error) {
-    console.log("Error handleCreateChapter: ", error);
-    return res.json({ success: false });
+    console.log("Error handleCreateComic: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
 };
 
-const handleUpdateChapter = async (req, res) => {
+const handleUpdateChapterByChapterId = async (req, res) => {
   const chapterId = req.params.chapterId;
   const imageFiles = req.files;
-  const { index, name, oldIndex } = req.body;
   const comicInfo = JSON.parse(req.body.comicInfo);
-
-  if (oldIndex !== index) {
-    const chapterIndexExists = await checkChapterIndexExists(
-      comicInfo.id,
-      index
-    );
-
-    if (chapterIndexExists) {
-      return res.json({
-        success: false,
-        error: "Chapter index exists",
-        isExists: true,
-      });
-    }
-  }
+  const chapterData = JSON.parse(req.body.chapterData);
 
   try {
-    const oldChapterNameMinio = "chapter-" + oldIndex;
-    const [removeChapterMinioResult, deleteImagesResult] = await Promise.all([
-      removeChapter(comicInfo.nameMinio, oldChapterNameMinio),
-      deleteImagesByChapterId(chapterId),
-    ]);
-
-    if (!removeChapterMinioResult.success || !deleteImagesResult.success) {
-      return res.json({ success: false });
-    }
-
-    const chapterNameMinio = "chapter-" + index;
-    const imagesInfo = [];
-
-    const uploadImagePromises = imageFiles.map(async (imageFile, index) => {
-      const uploadImageResult = await uploadImage(
-        comicInfo.nameMinio,
-        chapterNameMinio + `/page-${index + 1}`,
-        imageFile
-      );
-
-      imagesInfo.push({
-        index: index + 1,
-        url: uploadImageResult.fileUrl,
+    const { code, success, message, ...data } =
+      await services.updateChapterByChapterIdService({
         chapterId,
-      });
-    });
-
-    await Promise.all(uploadImagePromises);
-
-    const createImagesResult = await createImages(imagesInfo);
-
-    if (createImagesResult.success) {
-      const updateChapterResult = await updateChapterByChapterId({
-        id: chapterId,
-        nameMinio: chapterNameMinio,
-        index,
-        name,
+        comicInfo,
+        imageFiles,
+        chapterData,
       });
 
-      if (updateChapterResult.success) {
-        return res.json({ success: true });
-      } else {
-        return res.json({ success: false });
-      }
-    } else {
-      return res.json({ success: false });
-    }
+    return res.status(code).json({ code, success, message, data });
   } catch (error) {
-    console.log("Error handleUpdateChapter: ", error);
-    return res.json({ success: false });
+    console.log("Error handleUpdateChapterByChapterId: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
 };
 
-const handleDeleteChapterById = async (req, res) => {
+const handleDeleteChapterByChapterId = async (req, res) => {
   const chapterId = req.params.chapterId;
   const comicNameMinio = req.query.comicNameMinio;
+  const chapterNameMinio = req.query.chapterNameMinio;
 
   try {
-    const [chapterInfo] = await Promise.all([getChapterById(chapterId)]);
-    const chapterNameMinio = chapterInfo.nameMinio;
+    const { code, success, message, ...data } =
+      await services.deleteChapterByChapterIdService({
+        chapterId,
+        comicNameMinio,
+        chapterNameMinio,
+      });
 
-    const [removeChapterMinioResult, deleteImagesResult] = await Promise.all([
-      removeChapter(comicNameMinio, chapterNameMinio),
-      deleteImagesByChapterId(chapterId),
-    ]);
-
-    if (removeChapterMinioResult.success && deleteImagesResult.success) {
-      const deleteChapterResult = await deleteChapterByChapterId(chapterId);
-
-      if (deleteChapterResult.success) {
-        return res.json({ success: true });
-      }
-    }
-
-    return res.json({ success: false });
+    return res.status(code).json({ code, success, message, data });
   } catch (error) {
-    console.log("Error handleDeleteChapterById: ", error);
-    return res.json({ success: false });
+    console.log("Error handleDeleteChapterByChapterId: ", error.message);
+
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
   }
 };
 
 module.exports = {
-  handleCreateChapter,
-  handleUpdateChapter,
-  handleGetChapterById,
-  handleDeleteChapterById,
-  handleUpdateChapterViews,
   handleGetImagesOfChapter,
-  handleGetAllChaptersByComicId,
+  handleGetChapterByChapterId,
+  handleUpdateChapterViewsByChapterId,
+  handleCreateChapter,
+  handleUpdateChapterByChapterId,
+  handleDeleteChapterByChapterId,
 };

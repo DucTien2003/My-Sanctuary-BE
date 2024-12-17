@@ -6,44 +6,37 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 const {
+  handleGetComicByComicId,
+  handleCreateOrUpdateRatingByUserForComic,
+  handleDeleteRatingByUserForComic,
+  handleCreateBookmarkByUserForComic,
+  handleDeleteBookmarkByUserForComic,
   handleCreateComic,
-  handleGetAllGenres,
-  handleGetComicById,
-  handleGetListComics,
-  handleUpdateComicById,
-  handleDeleteComicById,
-  handleGetComicsByAuthId,
-  handleCreateComicRating,
-  handleUpdateComicRating,
-  handleDeleteComicRating,
-  handleCreateComicBookmark,
-  handleDeleteComicBookmark,
+  handleUpdateComicByComicId,
+  handleDeleteComicByComicId,
+  handleGetComics,
+  handleGetChaptersByComicId,
+  handleGetCommentsByComicId,
 } = require("../controllers/comicController.js");
 
 const router = express.Router();
 
-// router.get("/all-genres", handleGetAllGenres);
-// Get all comics
-router.get("/", handleGetListComics);
-// Create comic
-router.post("/", authenticateToken, upload.any(), handleCreateComic);
-// router.get("/auth", authenticateToken, handleGetComicsByAuthId);
+router.get("/", handleGetComics);
+router.post("/", upload.any(), authenticateToken, handleCreateComic);
 
-// Get comic
-router.get("/:comicId", authenticateToken, handleGetComicById);
-// Delete comic
-router.delete("/:comicId", authenticateToken, handleDeleteComicById);
-// Update comic
-router.put("/:comicId", authenticateToken, upload.any(), handleUpdateComicById);
+router.get("/:comicId", handleGetComicByComicId);
+router.put("/:comicId", upload.any(), handleUpdateComicByComicId);
+router.delete("/:comicId", handleDeleteComicByComicId);
 
-// router.put("/rating/:comicId", authenticateToken, handleUpdateComicRating);
-// router.post("/rating/:comicId", authenticateToken, handleCreateComicRating);
-// router.delete("/rating/:comicId", authenticateToken, handleDeleteComicRating);
-// router.post("/bookmark/:comicId", authenticateToken, handleCreateComicBookmark);
-// router.delete(
-//   "/bookmark/:comicId",
-//   authenticateToken,
-//   handleDeleteComicBookmark
-// );
+router.post("/:comicId/rating", handleCreateOrUpdateRatingByUserForComic);
+router.put("/:comicId/rating", handleCreateOrUpdateRatingByUserForComic);
+router.delete("/:comicId/rating", handleDeleteRatingByUserForComic);
+
+router.get("/:comicId/chapters", handleGetChaptersByComicId);
+
+router.post("/:comicId/bookmark", handleCreateBookmarkByUserForComic);
+router.delete("/:comicId/bookmark", handleDeleteBookmarkByUserForComic);
+
+router.get("/:comicId/comments", handleGetCommentsByComicId);
 
 module.exports = router;

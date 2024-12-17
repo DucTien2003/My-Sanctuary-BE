@@ -7,18 +7,20 @@ module.exports = (sequelize) => {
 
   BookmarkComicUser.init(
     {
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: () => uuidv4(),
-        primaryKey: true,
-      },
+      // id: {
+      //   type: DataTypes.UUID,
+      //   defaultValue: () => uuidv4(),
+      //   primaryKey: true,
+      // },
       comic_id: {
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true,
       },
       user_id: {
         type: DataTypes.UUID,
         allowNull: false,
+        primaryKey: true,
       },
     },
     {

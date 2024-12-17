@@ -1,236 +1,423 @@
-const pool = require("../config/database");
-const { convertToCamelCase } = require("../utils");
+const databaseService = require("./databaseService");
+const { isEmpty, errorSystemResponse } = require("../utils");
 
-const getImagesByChapterId = async (chapterId) => {
-  try {
-    const [images] = await pool.query(
-      `SELECT * FROM images WHERE chapter_id = ? ORDER BY \`index\` ASC`,
-      [chapterId]
-    );
+const getImagesByChapterIdService = async ({ chapterId }) => {
+  const { count, images } = await databaseService.getImagesByChapterId({
+    chapterId,
+  });
 
-    return images.length > 0 ? convertToCamelCase(images) : [];
-  } catch (error) {
-    console.log("Error getImagesByChapterId: ", error);
-    return [];
-  }
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy ảnh chương thành công",
+    count,
+    images,
+  };
 };
 
-const createImages = async (imagesInfo) => {
-  const query =
-    `INSERT INTO images (\`index\`, url, chapter_id) VALUES ` +
-    imagesInfo.map(() => "(?, ?, ?)").join(", ");
+const createImagesService = async ({ imagesData }) => {
+  if (imagesData.length === 0) {
+    return {
+      code: 400,
+      success: false,
+      message: "Không có ảnh để tạo",
+    };
+  }
 
-  try {
-    const [result] = await pool.query(
-      query,
-      imagesInfo
-        .map((imageInfo) => [
-          imageInfo.index,
-          imageInfo.url,
-          imageInfo.chapterId,
-        ])
-        .flat()
-    );
+  const { images, created } = await databaseService.createImages(imagesData);
 
-    if (result.affectedRows === 0) {
-      return { success: false };
+  return {
+    code: 200,
+    success: true,
+    message: "Tạo ảnh thành công",
+    images,
+  };
+};
+
+const deleteImagesByChapterIdService = async ({ chapterId }) => {
+  const { deleted } = await databaseService.deleteImagesByChapterId({
+    chapterId,
+  });
+
+  if (!deleted) {
+    return {
+      code: 404,
+      success: false,
+      message: "Chương không tồn tại",
+    };
+  }
+
+  return {
+    code: 200,
+    success: true,
+    message: "Xóa ảnh thành công",
+  };
+};
+
+const getChapterByChapterIdService = async ({ chapterId }) => {
+  const { chapter } = await databaseService.getChapterByChapterId({
+    chapterId,
+  });
+
+  if (isEmpty(chapter)) {
+    return {
+      code: 404,
+      success: false,
+      message: "Chương không tồn tại",
+    };
+  }
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy chương thành công",
+    chapter,
+  };
+};
+
+const createChapterService = async ({ imageFiles, comicInfo, chapterData }) => {
+  // Check if chapter index exists
+  const { existed: chapterIndexExists } =
+    await databaseService.checkChapterIndexExistsByComicId({
+      comicId: comicInfo.id,
+      numberOrder: chapterData.numberOrder,
+    });
+
+  if (chapterIndexExists) {
+    return {
+      code: 409,
+      success: false,
+      message: "Number order đã tồn tại",
+      errors: [
+        {
+          field: "numberOrder",
+          message: "Number order đã tồn tại",
+        },
+      ],
+    };
+  }
+
+  // Create chapter
+  const chapterNameMinio = "chapter-" + chapterData.numberOrder;
+  const [{ chapter, created }] = await Promise.all([
+    databaseService.createChapter({
+      chapterData: {
+        comicId: comicInfo.id,
+        name: chapterData.name,
+        numberOrder: chapterData.numberOrder,
+        nameMinio: chapterNameMinio,
+      },
+    }),
+  ]);
+
+  // Create images
+  if (created && chapter) {
+    const chapterId = chapter.id;
+    const imagesData = [];
+
+    // Upload images to Minio
+    const uploadImagePromises = imageFiles.map(async (imageFile, index) => {
+      const uploadImageResult = await databaseService.uploadImage(
+        comicInfo.nameMinio,
+        chapterNameMinio + `/page-${index + 1}`,
+        imageFile
+      );
+
+      imagesData.push({
+        numberOrder: index + 1,
+        url: uploadImageResult.fileUrl,
+        chapterId,
+      });
+    });
+
+    await Promise.all(uploadImagePromises);
+
+    const createImagesResult = await databaseService.createImages({
+      imagesData,
+    });
+
+    if (createImagesResult.created) {
+      return {
+        code: 200,
+        success: true,
+        message: "Tạo chương thành công",
+        chapter,
+        images: createImagesResult.images,
+      };
+    } else {
+      return {
+        code: 500,
+        success: false,
+        message: "Tạo ảnh chương thất bại",
+      };
     }
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error createImage: ", error);
-    return { success: false };
+  } else {
+    return {
+      code: 409,
+      success: false,
+      message: "Chương đã tồn tại",
+    };
   }
 };
 
-const deleteImagesByChapterId = async (chapterId) => {
-  try {
-    const [result] = await pool.query(
-      `DELETE FROM images WHERE chapter_id = ?`,
-      [chapterId]
-    );
+const updateChapterByChapterIdService = async ({
+  chapterId,
+  comicInfo,
+  imageFiles,
+  chapterData,
+}) => {
+  // Check if number order exists
+  if (chapterData.oldNumberOrder !== chapterData.numberOrder) {
+    const { existed: chapterIndexExists } =
+      await databaseService.checkChapterIndexExistsByComicId({
+        comicId: comicInfo.id,
+        numberOrder: chapterData.numberOrder,
+      });
 
-    return { success: true };
-  } catch (error) {
-    console.log("Error deleteImagesByChapterId: ", error);
-    return { success: false };
-  }
-};
-
-const getChapterById = async (chapterId) => {
-  try {
-    const [chapterInfo] = await pool.query(
-      "SELECT * FROM chapters WHERE id = ?",
-      [chapterId]
-    );
-
-    return chapterInfo.length > 0 ? convertToCamelCase(chapterInfo[0]) : {};
-  } catch (error) {
-    console.log("Error getChapterById: ", error);
-    return {};
-  }
-};
-
-const createChapter = async (chapterInfo) => {
-  try {
-    const [result] = await pool.query(
-      `INSERT INTO chapters (name, \`index\`, name_minio, comic_id) VALUES (?, ?, ?, ?)`,
-      [
-        chapterInfo.name,
-        chapterInfo.index,
-        chapterInfo.nameMinio,
-        chapterInfo.comicId,
-      ]
-    );
-
-    if (result.affectedRows === 0) {
-      return { success: false };
+    if (chapterIndexExists) {
+      return {
+        code: 409,
+        success: false,
+        message: "Number order đã tồn tại",
+        errors: [
+          {
+            field: "numberOrder",
+            message: "Number order đã tồn tại",
+          },
+        ],
+      };
     }
-
-    return { success: true, insertId: result.insertId };
-  } catch (error) {
-    console.log("Error createChapter: ", error);
-    return { success: false };
   }
-};
 
-const updateChapterByChapterId = async (chapterInfo) => {
-  try {
-    const [result] = await pool.query(
-      `UPDATE chapters SET name = ?, \`index\` = ?, name_minio = ? WHERE id = ?`,
-      [
-        chapterInfo.name,
-        chapterInfo.index,
-        chapterInfo.nameMinio,
-        chapterInfo.id,
-      ]
-    );
+  // Delete old images
+  const oldChapterNameMinio = "chapter-" + chapterData.oldNumberOrder;
 
-    if (result.affectedRows === 0) {
-      return { success: false };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.log("Error updateChapterByChapterId: ", error);
-    return { success: false };
-  }
-};
-
-const deleteChapterByChapterId = async (chapterId) => {
-  try {
-    const [result] = await pool.query(`DELETE FROM chapters WHERE id = ?`, [
+  const [removeChapterMinioResult, deleteImagesResult] = await Promise.all([
+    databaseService.removeChapter(comicInfo.nameMinio, oldChapterNameMinio),
+    databaseService.deleteImagesByChapterId({
       chapterId,
-    ]);
+    }),
+  ]);
 
-    return { success: true };
-  } catch (error) {
-    console.log("Error deleteChapterByChapterId: ", error);
-    return { success: false };
+  if (!removeChapterMinioResult.success || !deleteImagesResult.deleted) {
+    return {
+      code: 500,
+      success: false,
+      message: "Cập nhật chương thất bại",
+    };
+  }
+
+  // Update chapter
+  const chapterNameMinio = "chapter-" + chapterData.numberOrder;
+  const { updated } = await databaseService.updateChapterByChapterId({
+    chapterData: {
+      ...chapterData,
+      id: chapterId,
+      nameMinio: chapterNameMinio,
+    },
+  });
+
+  if (!updated) {
+    return {
+      code: 404,
+      success: false,
+      message: "Chương không tồn tại",
+    };
+  }
+
+  // Upload new images to Minio
+  const imagesData = [];
+  const uploadImagePromises = imageFiles.map(async (imageFile, index) => {
+    const uploadImageResult = await databaseService.uploadImage(
+      comicInfo.nameMinio,
+      chapterNameMinio + `/page-${index + 1}`,
+      imageFile
+    );
+    imagesData.push({
+      numberOrder: index + 1,
+      url: uploadImageResult.fileUrl,
+      chapterId,
+    });
+  });
+
+  await Promise.all(uploadImagePromises);
+  const createImagesResult = await databaseService.createImages({
+    imagesData,
+  });
+
+  if (createImagesResult.created) {
+    return {
+      code: 200,
+      success: true,
+      message: "Update chương thành công",
+      images: createImagesResult.images,
+    };
+  } else {
+    return {
+      code: 500,
+      success: false,
+      message: "Tạo ảnh chương thất bại",
+    };
   }
 };
 
-const getChaptersByIds = async (chapterIds) => {
-  if (chapterIds.length === 0) {
-    return [];
+const deleteChapterByChapterIdService = async ({
+  chapterId,
+  comicNameMinio,
+  chapterNameMinio,
+}) => {
+  // Delete chapter images and remove chapter folder in Minio
+  const [removeChapterMinioResult, deleteImagesResult] = await Promise.all([
+    databaseService.removeChapter(comicNameMinio, chapterNameMinio),
+    databaseService.deleteImagesByChapterId({ chapterId }),
+  ]);
+
+  if (!removeChapterMinioResult.success || !deleteImagesResult.deleted) {
+    return errorSystemResponse;
   }
 
-  const placeholders = chapterIds.map(() => "?").join(", ");
-  try {
-    const [chaptersInfo] = await pool.query(
-      `SELECT * FROM chapters WHERE id IN (${placeholders})`,
-      chapterIds
-    );
+  // Delete chapter
+  const { deleted } = await databaseService.deleteChapterByChapterId({
+    chapterId,
+  });
 
-    return chaptersInfo.length > 0 ? convertToCamelCase(chaptersInfo) : [];
-  } catch (error) {
-    console.log("Error getChaptersByIds: ", error);
-    return [];
+  if (!deleted) {
+    return {
+      code: 404,
+      success: false,
+      message: "Chương không tồn tại",
+    };
   }
+
+  return {
+    code: 200,
+    success: true,
+    message: "Xóa chương thành công",
+  };
+
+  //   return res.json({ success: false });
 };
 
-const getAllChaptersByComicId = async (comicId) => {
-  try {
-    const [allChapters, fields] = await pool.query(
-      `SELECT * FROM chapters WHERE comic_id = ? ORDER BY \`index\` ASC`,
-      [comicId]
-    );
+const getChaptersByChapterIdsService = async ({
+  chapterIds,
+  page = 1,
+  limit = 0,
+  orderBy = "created_at",
+  sortType = "ASC",
+}) => {
+  const { count, chapters } = await databaseService.getChaptersByChapterIds({
+    chapterIds,
+    page: Number(page),
+    limit: Number(limit),
+    orderBy,
+    sortType,
+  });
 
-    return convertToCamelCase(allChapters);
-  } catch (error) {
-    console.log("Error getAllChaptersByComicId: ", error);
-    return [];
-  }
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy chương thành công",
+    chapters,
+    count,
+  };
 };
 
-const updateChapterViews = async (chapterId) => {
-  try {
-    const [updateResult] = await pool.query(
-      `UPDATE chapters SET views = views + 1 WHERE id = ?`,
-      [chapterId]
-    );
+const updateChapterViewsByChapterIdService = async ({ chapterId }) => {
+  const { updated } = await databaseService.updateChapterViewsByChapterId({
+    chapterId,
+  });
 
-    return updateResult.affectedRows > 0;
-  } catch (error) {
-    console.log("Error updateChapterViews: ", error);
-    return false;
+  if (!updated) {
+    return {
+      code: 404,
+      success: false,
+      message: "Chương không tồn tại",
+    };
   }
+
+  return {
+    code: 200,
+    success: true,
+    message: "Cập nhật lượt xem chương thành công",
+  };
 };
 
-const checkChapterIndexExists = async (comicId, index) => {
-  try {
-    const [chapterInfo] = await pool.query(
-      `SELECT * FROM chapters WHERE comic_id = ? and \`index\` = ?`,
-      [comicId, index]
-    );
+const checkChapterExistsByComicIdService = async ({ comicId }) => {
+  const { existed } = await databaseService.checkChapterExistsByComicId({
+    comicId,
+  });
 
-    return chapterInfo.length > 0;
-  } catch (error) {
-    console.log("Error checkChapterExists: ", error);
-    return false;
-  }
+  return {
+    code: 200,
+    success: true,
+    message: "Kiểm tra chương thành công",
+    existed,
+  };
 };
 
-const checkChapterExistsByComicId = async (comicId) => {
-  try {
-    const [chaptersInfo] = await pool.query(
-      `SELECT * FROM chapters WHERE comic_id = ?`,
-      [comicId]
-    );
+const checkChapterIndexExistsByComicIdService = async ({ comicId, index }) => {
+  const { existed } = await databaseService.checkChapterIndexExistsByComicId({
+    comicId,
+    index,
+  });
 
-    return chaptersInfo.length > 0;
-  } catch (error) {
-    console.log("Error checkChapterExistsByComicId: ", error);
-    return false;
-  }
+  return {
+    code: 200,
+    success: true,
+    message: "Kiểm tra chương thành công",
+    existed,
+  };
 };
 
-const getLatestChapter = async (comicId) => {
-  try {
-    const [chapterInfo] = await pool.query(
-      "SELECT * FROM chapters WHERE comic_id = ? ORDER BY `index` DESC LIMIT 1",
-      [comicId]
-    );
+const getLatestChapterByComicIdService = async ({ comicId }) => {
+  const { chapter } = await databaseService.getLatestChapterByComicId({
+    comicId,
+  });
 
-    return chapterInfo.length > 0 ? convertToCamelCase(chapterInfo[0]) : {};
-  } catch (error) {
-    console.log("Error checkChapterExistsByComicId: ", error);
-    return {};
-  }
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy chương mới nhất thành công",
+    chapter,
+  };
+};
+
+const getChaptersByComicIdService = async ({
+  comicId,
+  page = 1,
+  limit = 0,
+  sortType = "ASC",
+  orderBy = "number_order",
+}) => {
+  const { count, chapters } = await databaseService.getChaptersByComicId({
+    comicId,
+    page: Number(page),
+    limit: Number(limit),
+    orderBy,
+    sortType,
+  });
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy danh sách chương thành công",
+    chapters,
+    count,
+  };
 };
 
 module.exports = {
-  createImages,
-  createChapter,
-  getChapterById,
-  getLatestChapter,
-  getChaptersByIds,
-  updateChapterViews,
-  getImagesByChapterId,
-  checkChapterIndexExists,
-  deleteImagesByChapterId,
-  getAllChaptersByComicId,
-  updateChapterByChapterId,
-  deleteChapterByChapterId,
-  checkChapterExistsByComicId,
+  getImagesByChapterIdService,
+  createImagesService,
+  deleteImagesByChapterIdService,
+  getChapterByChapterIdService,
+  createChapterService,
+  updateChapterByChapterIdService,
+  deleteChapterByChapterIdService,
+  getChaptersByChapterIdsService,
+  updateChapterViewsByChapterIdService,
+  checkChapterExistsByComicIdService,
+  checkChapterIndexExistsByComicIdService,
+  getLatestChapterByComicIdService,
+  getChaptersByComicIdService,
 };
