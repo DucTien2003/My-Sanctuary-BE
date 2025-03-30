@@ -1,5 +1,5 @@
 const express = require("express");
-const authenticateToken = require("../middleware/authenticateToken.js");
+const { authenticateToken } = require("../middleware");
 
 const {
   handleGetUserByMyId,

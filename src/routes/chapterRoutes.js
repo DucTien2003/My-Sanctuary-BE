@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 
-const authenticateToken = require("../middleware/authenticateToken.js");
+// const {authenticateToken} = require("../middleware");
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 

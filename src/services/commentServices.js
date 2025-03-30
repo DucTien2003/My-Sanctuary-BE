@@ -60,7 +60,7 @@ const handleNestedComments = async (comments) => {
     }
   }
 
-  return roots;
+  return roots.reverse();
 };
 
 // Services
@@ -169,7 +169,7 @@ const getCommentsByComicIdService = async ({
   limit = 0,
   page = 1,
   orderBy = "created_at",
-  sortType = "ASC",
+  sortType = "DESC",
 }) => {
   const { count, comments } = await databaseService.getCommentsByComicId({
     comicId,

@@ -124,7 +124,7 @@ const getChaptersByComicId = async ({
     where: { comic_id: comicId },
     order: [[orderBy, sortType]],
     limit: limit > 0 ? limit : undefined, // chỉ áp dụng limit nếu limit > 0
-    offset: limit > 0 ? (page - 1) * limit : undefined, // chỉ áp dụng offset nếu limit > 0
+    offset: limit > 0 && page > 0 ? (page - 1) * limit : undefined, // chỉ áp dụng offset nếu limit > 0 && page > 0
   });
 
   const chapters = chaptersResult.map((chapter) => chapter.dataValues);

@@ -26,7 +26,7 @@ const deleteBookmarkByUserForComic = async ({ comicId, userId }) => {
     where: { comic_id: comicId, user_id: userId },
   });
 
-  return { delete: count > 0 };
+  return { deleted: count > 0 };
 };
 
 module.exports = {

@@ -98,14 +98,20 @@ const createReplyComment = async ({
     : { comment: {}, created: false };
 };
 
-const getCommentsByComicId = async ({ comicId, limit, page }) => {
+const getCommentsByComicId = async ({
+  comicId,
+  limit,
+  page,
+  orderBy,
+  sortType,
+}) => {
   // Get root comments
   const { count, rows: rootCommentsResult } = await Comment.findAndCountAll({
     where: {
       comic_id: comicId,
       root: true,
     },
-    order: [["left_value", "ASC"]],
+    order: [["left_value", "DESC"]],
     limit,
     offset: limit > 0 ? (page - 1) * limit : undefined,
   });
@@ -117,8 +123,8 @@ const getCommentsByComicId = async ({ comicId, limit, page }) => {
   const rootComments = rootCommentsResult.map((comment) => comment.dataValues);
 
   // Get reply comments
-  const minLeftValue = rootComments[0].left_value;
-  const maxRightValue = rootComments[rootComments.length - 1].right_value;
+  const minLeftValue = rootComments[rootComments.length - 1].left_value;
+  const maxRightValue = rootComments[0].right_value;
 
   const allCommentsResult = await Comment.findAll({
     where: {
@@ -127,7 +133,7 @@ const getCommentsByComicId = async ({ comicId, limit, page }) => {
         [Sequelize.Op.between]: [minLeftValue, maxRightValue],
       },
     },
-    order: [["left_value", "ASC"]],
+    order: [["left_value", "DESC"]],
   });
 
   const allComments = allCommentsResult.map((comment) => comment.dataValues);

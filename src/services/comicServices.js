@@ -35,7 +35,7 @@ const getComicsService = async ({
   };
 };
 
-const getComicByComicIdService = async ({ comicId, authId }) => {
+const getComicByComicIdService = async ({ comicId, userId }) => {
   const results = await Promise.all([
     databaseService.getComicByComicId({ comicId }),
     databaseService.getGenresForComicByComicId({
@@ -45,18 +45,18 @@ const getComicByComicIdService = async ({ comicId, authId }) => {
       orderBy: "name",
       sortType: "DESC",
     }),
-    ...(authId
+    ...(userId
       ? [
-          databaseService.getRatingByUserForComic({ comicId, authId }),
-          databaseService.getBookmarkByUserForComic({ comicId, authId }),
+          databaseService.getRatingByUserForComic({ comicId, userId }),
+          databaseService.getBookmarkByUserForComic({ comicId, userId }),
         ]
       : []),
   ]);
 
   const comicResult = results[0];
   const genresResult = results[1];
-  const ratingResult = authId ? results[2] : null;
-  const bookmarkResult = authId ? results[3] : null;
+  const ratingResult = userId ? results[2] : null;
+  const bookmarkResult = userId ? results[3] : null;
 
   if (isEmpty(comicResult.comic)) {
     return {
@@ -69,7 +69,7 @@ const getComicByComicIdService = async ({ comicId, authId }) => {
   const comicInfo = {
     ...comicResult.comic,
     genres: genresResult.genres,
-    ...(authId
+    ...(userId
       ? {
           authRating: !isEmpty(ratingResult.rating),
           authBookmark: !isEmpty(bookmarkResult.bookmark),

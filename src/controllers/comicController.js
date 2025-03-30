@@ -3,7 +3,7 @@ const { isEmpty, formatPath } = require("../utils");
 const services = require("../services");
 
 const handleGetComicByComicId = async (req, res) => {
-  const authId = req.id;
+  const userId = req.id;
   const comicId = req.params.comicId;
   const { limit, orderBy, sortType, page } = req.query;
 
@@ -11,7 +11,7 @@ const handleGetComicByComicId = async (req, res) => {
     const { code, success, message, ...data } =
       await services.getComicByComicIdService({
         comicId,
-        authId,
+        userId,
         limit,
         orderBy,
         sortType,
@@ -228,11 +228,17 @@ const handleGetChaptersByComicId = async (req, res) => {
 
 const handleGetCommentsByComicId = async (req, res) => {
   const comicId = req.params.comicId;
-  const { limit, page } = req.query;
+  const { limit, orderBy, sortType, page } = req.query;
 
   try {
     const { code, success, message, ...data } =
-      await services.getCommentsByComicIdService({ comicId, limit, page });
+      await services.getCommentsByComicIdService({
+        comicId,
+        limit,
+        orderBy,
+        sortType,
+        page,
+      });
 
     return res.status(code).json({ code, success, message, data: data });
   } catch (error) {

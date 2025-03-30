@@ -91,7 +91,7 @@ const createChapterService = async ({ imageFiles, comicInfo, chapterData }) => {
       errors: [
         {
           field: "numberOrder",
-          message: "Number order đã tồn tại",
+          message: "STT đã tồn tại",
         },
       ],
     };

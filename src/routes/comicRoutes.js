@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 
-const authenticateToken = require("../middleware/authenticateToken.js");
+const { authenticateToken, getInfoToken } = require("../middleware");
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -24,18 +24,38 @@ const router = express.Router();
 router.get("/", handleGetComics);
 router.post("/", upload.any(), authenticateToken, handleCreateComic);
 
-router.get("/:comicId", handleGetComicByComicId);
+router.get("/:comicId", getInfoToken, handleGetComicByComicId);
 router.put("/:comicId", upload.any(), handleUpdateComicByComicId);
 router.delete("/:comicId", handleDeleteComicByComicId);
 
-router.post("/:comicId/rating", handleCreateOrUpdateRatingByUserForComic);
-router.put("/:comicId/rating", handleCreateOrUpdateRatingByUserForComic);
-router.delete("/:comicId/rating", handleDeleteRatingByUserForComic);
+router.post(
+  "/:comicId/rating",
+  authenticateToken,
+  handleCreateOrUpdateRatingByUserForComic
+);
+router.put(
+  "/:comicId/rating",
+  authenticateToken,
+  handleCreateOrUpdateRatingByUserForComic
+);
+router.delete(
+  "/:comicId/rating",
+  authenticateToken,
+  handleDeleteRatingByUserForComic
+);
 
 router.get("/:comicId/chapters", handleGetChaptersByComicId);
 
-router.post("/:comicId/bookmark", handleCreateBookmarkByUserForComic);
-router.delete("/:comicId/bookmark", handleDeleteBookmarkByUserForComic);
+router.post(
+  "/:comicId/bookmark",
+  authenticateToken,
+  handleCreateBookmarkByUserForComic
+);
+router.delete(
+  "/:comicId/bookmark",
+  authenticateToken,
+  handleDeleteBookmarkByUserForComic
+);
 
 router.get("/:comicId/comments", handleGetCommentsByComicId);
 

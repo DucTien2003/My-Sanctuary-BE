@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-function authenticateToken(req, res, next) {
+const authenticateToken = (req, res, next) => {
   const accessToken = req.headers.accesstoken;
 
   // Unauthorized
@@ -32,6 +32,6 @@ function authenticateToken(req, res, next) {
 
     return next();
   });
-}
+};
 
 module.exports = authenticateToken;
