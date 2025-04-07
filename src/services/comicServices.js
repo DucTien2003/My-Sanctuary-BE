@@ -453,8 +453,8 @@ const getComicsByUserIdService = async ({
 }) => {
   const { count, comics } = await databaseService.getComicsByUserId({
     userId,
-    page,
-    limit,
+    page: Number(page),
+    limit: Number(limit),
     orderBy,
     sortType,
   });
