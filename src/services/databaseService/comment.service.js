@@ -103,7 +103,7 @@ const getCommentsByComicId = async ({
   limit,
   page,
   orderBy,
-  sortType,
+  order,
 }) => {
   // Get root comments
   const { count, rows: rootCommentsResult } = await Comment.findAndCountAll({

@@ -9,16 +9,10 @@ const getUserByUserId = async ({ userId }) => {
   return !isEmpty(user) ? { user: convertToCamelCase(user) } : { user: {} };
 };
 
-const getUsersByUserIds = async ({
-  page,
-  limit,
-  orderBy,
-  sortType,
-  userIds,
-}) => {
+const getUsersByUserIds = async ({ page, limit, orderBy, order, userIds }) => {
   const { count, rows: usersResult } = await User.findAndCountAll({
     where: { id: userIds },
-    order: [[orderBy, sortType]],
+    order: [[orderBy, order]],
     limit: limit > 0 ? limit : undefined, // chỉ áp dụng limit nếu limit > 0
     offset: limit > 0 ? (page - 1) * limit : undefined,
   });

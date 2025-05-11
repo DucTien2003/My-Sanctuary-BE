@@ -169,14 +169,14 @@ const getCommentsByComicIdService = async ({
   limit = 0,
   page = 1,
   orderBy = "created_at",
-  sortType = "DESC",
+  order = "DESC",
 }) => {
   const { count, comments } = await databaseService.getCommentsByComicId({
     comicId,
     limit: Number(limit),
     page: page ? Number(page) : 1,
     orderBy,
-    sortType,
+    order,
   });
 
   // Handle reply comments

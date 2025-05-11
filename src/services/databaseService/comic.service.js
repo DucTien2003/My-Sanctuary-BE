@@ -1,17 +1,48 @@
 const { Op, Sequelize } = require("sequelize");
 const { isEmpty, convertToCamelCase } = require("../../utils");
 const { Comic } = require("../../models");
+const { Genre } = require("../../models");
+const { BookmarkComicUser } = require("../../models");
 
-const getComics = async ({ page, limit, orderBy, sortType }) => {
+const getComics = async ({
+  page = 1,
+  limit = 0,
+  genres = "",
+  search = "",
+  order = "DESC",
+  status = "all",
+  orderBy = "created_at",
+}) => {
+  const genreIds = genres ? genres.split(",") : [];
+
   const { count, rows: comicsResult } = await Comic.findAndCountAll({
     where: {
       number_of_chapters: {
         [Op.gt]: 0, // Chỉ chọn các comic có number_of_chapter > 0
       },
+      ...(status !== "all" && { status }),
+      ...(search && {
+        [Op.or]: [
+          { name: { [Op.like]: `%${search}%` } },
+          { subname: { [Op.like]: `%${search}%` } },
+        ],
+      }),
     },
-    order: [[orderBy, sortType]],
-    limit: limit > 0 ? limit : undefined, // chỉ áp dụng limit nếu limit > 0
-    offset: limit > 0 ? (page - 1) * limit : undefined, // chỉ áp dụng offset nếu limit > 0
+    include: genreIds.length
+      ? [
+          {
+            model: Genre,
+            where: {
+              id: { [Op.in]: genreIds },
+            },
+            through: { attributes: [] }, // không cần data từ bảng trung gian
+            required: true, // inner join
+          },
+        ]
+      : [],
+    order: [[orderBy, order]],
+    limit: Number(limit) > 0 ? Number(limit) : undefined, // chỉ áp dụng limit nếu limit > 0
+    offset: Number(limit) > 0 ? (Number(page) - 1) * Number(limit) : undefined, // chỉ áp dụng offset nếu limit > 0
   });
 
   const comics = comicsResult.map((comic) => comic.dataValues);
@@ -53,7 +84,6 @@ const createComic = async ({ comicInfo }) => {
 };
 
 const updateComicByComicId = async ({ comicInfo }) => {
-  console.log(comicInfo);
   const [count] = await Comic.update(
     {
       name: comicInfo.name,
@@ -84,19 +114,70 @@ const deleteComicByComicId = async ({ comicId }) => {
 
 const getComicsByUserId = async ({
   userId,
-  page,
-  limit,
-  orderBy,
-  sortType,
+  page = 1,
+  limit = 0,
+  genres = "",
+  order = "DESC",
+  status = "all",
+  orderBy = "created_at",
 }) => {
+  const genreIds = genres ? genres.split(",") : [];
+
   const { count, rows: comicsResult } = await Comic.findAndCountAll({
-    where: { poster_id: userId },
-    order: [[orderBy, sortType]],
-    limit: limit > 0 ? limit : undefined, // chỉ áp dụng limit nếu limit > 0
-    offset: limit > 0 ? (page - 1) * limit : undefined, // chỉ áp dụng offset nếu limit > 0
+    where: {
+      poster_id: userId,
+      ...(status !== "all" && { status }),
+    },
+    include: genreIds.length
+      ? [
+          {
+            model: Genre,
+            where: {
+              id: { [Op.in]: genreIds },
+            },
+            through: { attributes: [] }, // không cần data từ bảng trung gian
+            required: true, // inner join
+          },
+        ]
+      : [],
+    order: [[orderBy, order]],
+    limit: Number(limit) > 0 ? Number(limit) : undefined, // chỉ áp dụng limit nếu limit > 0
+    offset: Number(limit) > 0 ? (Number(page) - 1) * Number(limit) : undefined, // chỉ áp dụng offset nếu limit > 0
   });
 
   const comics = comicsResult.map((comic) => comic.dataValues);
+
+  return !isEmpty(comics)
+    ? { count, comics: convertToCamelCase(comics) }
+    : { count: 0, comics: [] };
+};
+
+const getBookmarkComicsByUserId = async ({
+  userId,
+  page,
+  limit,
+  orderBy,
+  order,
+}) => {
+  const { count, rows: comicsResult } = await BookmarkComicUser.findAndCountAll(
+    {
+      where: { user_id: userId },
+      include: [
+        {
+          model: Comic,
+        },
+      ],
+      order: [[orderBy, order]],
+      limit: limit > 0 ? limit : undefined, // chỉ áp dụng limit nếu limit > 0
+      offset: limit > 0 ? (page - 1) * limit : undefined, // chỉ áp dụng offset nếu limit > 0
+    }
+  );
+
+  const comics = comicsResult.map((comic) => {
+    const comicData = comic.dataValues;
+    const comicInfo = comicData.Comic.dataValues;
+    return { ...comicData, comic: comicInfo };
+  });
 
   return !isEmpty(comics)
     ? { count, comics: convertToCamelCase(comics) }
@@ -110,4 +191,5 @@ module.exports = {
   updateComicByComicId,
   deleteComicByComicId,
   getComicsByUserId,
+  getBookmarkComicsByUserId,
 };

@@ -8,7 +8,7 @@ const getGenresForComicByComicId = async ({
   page,
   limit,
   orderBy,
-  sortType,
+  order,
 }) => {
   const { count, rows: genresResult } = await Genre.findAndCountAll({
     include: [
@@ -19,7 +19,7 @@ const getGenresForComicByComicId = async ({
       },
     ],
     order: [["name", "ASC"]],
-    // order: [[orderBy, sortType]],
+    // order: [[orderBy, order]],
     limit: limit > 0 ? limit : undefined, // chỉ áp dụng limit nếu limit > 0
     offset: limit > 0 ? (page - 1) * limit : undefined, // chỉ áp dụng offset nếu limit > 0
   });

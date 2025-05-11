@@ -17,12 +17,15 @@ const {
   handleGetComics,
   handleGetChaptersByComicId,
   handleGetCommentsByComicId,
+  handleGetBookmarkComicsByUserId,
 } = require("../controllers/comicController.js");
 
 const router = express.Router();
 
 router.get("/", handleGetComics);
 router.post("/", upload.any(), authenticateToken, handleCreateComic);
+
+router.get("/bookmark", authenticateToken, handleGetBookmarkComicsByUserId);
 
 router.get("/:comicId", getInfoToken, handleGetComicByComicId);
 router.put("/:comicId", upload.any(), handleUpdateComicByComicId);

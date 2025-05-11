@@ -53,16 +53,12 @@ const handleGetComicsByUserId = async (req, res) => {
 
 const handleGetComicsByMyId = async (req, res) => {
   const userId = req.id;
-  const { limit, page, orderBy, sortType } = req.query;
 
   try {
     const { code, success, message, ...data } =
       await services.getComicsByUserIdService({
         userId,
-        limit,
-        page,
-        orderBy,
-        sortType,
+        ...req.query,
       });
 
     return res.status(code).json({ code, success, message, data });

@@ -61,11 +61,11 @@ const getChaptersByChapterIds = async ({
   page,
   limit,
   orderBy,
-  sortType,
+  order,
 }) => {
   const { count, rows: chaptersResult } = await Chapter.findAndCountAll({
     where: { id: chapterIds },
-    order: [[orderBy, sortType]],
+    order: [[orderBy, order]],
     limit: limit > 0 ? limit : undefined, // chỉ áp dụng limit nếu limit > 0
     offset: limit > 0 ? (page - 1) * limit : undefined, // chỉ áp dụng offset nếu limit > 0
   });
@@ -118,11 +118,11 @@ const getChaptersByComicId = async ({
   page,
   limit,
   orderBy,
-  sortType,
+  order,
 }) => {
   const { count, rows: chaptersResult } = await Chapter.findAndCountAll({
     where: { comic_id: comicId },
-    order: [[orderBy, sortType]],
+    order: [[orderBy, order]],
     limit: limit > 0 ? limit : undefined, // chỉ áp dụng limit nếu limit > 0
     offset: limit > 0 && page > 0 ? (page - 1) * limit : undefined, // chỉ áp dụng offset nếu limit > 0 && page > 0
   });

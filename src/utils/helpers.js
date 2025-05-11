@@ -39,13 +39,13 @@ const isEmpty = (value) => {
 };
 
 // Sort by last number of string
-const sortByLastNumber = (arr, sortType = false) => {
+const sortByLastNumber = (arr, order = false) => {
   return arr.sort((a, b) => {
     // Split the string by spaces and get the last element
     const numA = parseFloat(a.split(" ").pop());
     const numB = parseFloat(b.split(" ").pop());
 
-    return sortType ? numB - numA : numA - numB;
+    return order ? numB - numA : numA - numB;
   });
 };
 

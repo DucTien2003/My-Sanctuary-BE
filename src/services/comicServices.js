@@ -1,18 +1,8 @@
 const databaseService = require("./databaseService");
 const { isEmpty, formatPath, errorSystemResponse } = require("../utils");
 
-const getComicsService = async ({
-  page = 1,
-  limit = 0,
-  orderBy = "created_at",
-  sortType = "ASC",
-}) => {
-  const { count, comics } = await databaseService.getComics({
-    page: Number(page),
-    limit: Number(limit),
-    orderBy,
-    sortType,
-  });
+const getComicsService = async (query) => {
+  const { count, comics } = await databaseService.getComics(query);
 
   const comicsWithLatestChapter = await Promise.all(
     comics.map(async (comic) => {
@@ -43,7 +33,7 @@ const getComicByComicIdService = async ({ comicId, userId }) => {
       page: 1,
       limit: 0,
       orderBy: "name",
-      sortType: "DESC",
+      order: "DESC",
     }),
     ...(userId
       ? [
@@ -444,26 +434,55 @@ const deleteGenresForComicByComicIdService = async ({ comicId }) => {
   };
 };
 
-const getComicsByUserIdService = async ({
-  userId,
-  page = 1,
-  limit = 0,
-  orderBy = "created_at",
-  sortType = "ASC",
-}) => {
-  const { count, comics } = await databaseService.getComicsByUserId({
-    userId,
-    page: Number(page),
-    limit: Number(limit),
-    orderBy,
-    sortType,
-  });
+const getComicsByUserIdService = async (query) => {
+  const { count, comics } = await databaseService.getComicsByUserId(query);
 
   return {
     code: 200,
     success: true,
     message: "Lấy thông tin truyện của user thành công",
     comics,
+    count,
+  };
+};
+
+const getBookmarkComicsByUserIdService = async ({
+  userId,
+  page = 1,
+  limit = 0,
+  orderBy = "created_at",
+  order = "ASC",
+}) => {
+  const { count, comics } = await databaseService.getBookmarkComicsByUserId({
+    userId,
+    page: Number(page),
+    limit: Number(limit),
+    orderBy,
+    order,
+  });
+
+  const comicsWithLatestChapter = await Promise.all(
+    comics.map(async (comic) => {
+      const { chapter: latestChapter } =
+        await databaseService.getLatestChapterByComicId({
+          comicId: comic.comic.id,
+        });
+
+      return {
+        ...comic,
+        comic: {
+          ...comic.comic,
+          latestChapter,
+        },
+      };
+    })
+  );
+
+  return {
+    code: 200,
+    success: true,
+    message: "Lấy danh sách truyện đã bookmark thành công",
+    comics: comicsWithLatestChapter,
     count,
   };
 };
@@ -483,4 +502,5 @@ module.exports = {
   createOrUpdateGenresForComicByComicIdService,
   deleteGenresForComicByComicIdService,
   getComicsByUserIdService,
+  getBookmarkComicsByUserIdService,
 };

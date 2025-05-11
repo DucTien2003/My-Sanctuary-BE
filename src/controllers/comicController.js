@@ -5,7 +5,7 @@ const services = require("../services");
 const handleGetComicByComicId = async (req, res) => {
   const userId = req.id;
   const comicId = req.params.comicId;
-  const { limit, orderBy, sortType, page } = req.query;
+  const { limit, orderBy, order, page } = req.query;
 
   try {
     const { code, success, message, ...data } =
@@ -14,7 +14,7 @@ const handleGetComicByComicId = async (req, res) => {
         userId,
         limit,
         orderBy,
-        sortType,
+        order,
         page,
       });
 
@@ -180,16 +180,9 @@ const handleDeleteComicByComicId = async (req, res) => {
 };
 
 const handleGetComics = async (req, res) => {
-  const { limit, orderBy, sortType, page } = req.query;
-
   try {
     const { code, success, message, ...data } = await services.getComicsService(
-      {
-        limit,
-        orderBy,
-        sortType,
-        page,
-      }
+      req.query
     );
 
     return res.status(code).json({ code, success, message, data: data });
@@ -204,7 +197,7 @@ const handleGetComics = async (req, res) => {
 
 const handleGetChaptersByComicId = async (req, res) => {
   const comicId = req.params.comicId;
-  const { limit, page, orderBy, sortType } = req.query;
+  const { limit, page, orderBy, order } = req.query;
 
   try {
     const { code, success, message, ...data } =
@@ -213,7 +206,7 @@ const handleGetChaptersByComicId = async (req, res) => {
         limit,
         page,
         orderBy,
-        sortType,
+        order,
       });
 
     return res.status(code).json({ code, success, message, data });
@@ -228,7 +221,7 @@ const handleGetChaptersByComicId = async (req, res) => {
 
 const handleGetCommentsByComicId = async (req, res) => {
   const comicId = req.params.comicId;
-  const { limit, orderBy, sortType, page } = req.query;
+  const { limit, orderBy, order, page } = req.query;
 
   try {
     const { code, success, message, ...data } =
@@ -236,13 +229,36 @@ const handleGetCommentsByComicId = async (req, res) => {
         comicId,
         limit,
         orderBy,
-        sortType,
+        order,
         page,
       });
 
     return res.status(code).json({ code, success, message, data: data });
   } catch (error) {
     console.log("Error handleGetCommentsByComicId: ", error.message);
+    return res
+      .status(500)
+      .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
+  }
+};
+
+const handleGetBookmarkComicsByUserId = async (req, res) => {
+  const userId = req.id;
+  const { limit, orderBy, order, page } = req.query;
+
+  try {
+    const { code, success, message, ...data } =
+      await services.getBookmarkComicsByUserIdService({
+        userId,
+        limit,
+        orderBy,
+        order,
+        page,
+      });
+
+    return res.status(code).json({ code, success, message, data });
+  } catch (error) {
+    console.log("Error handleGetBookmarkComicsByUserId: ", error.message);
     return res
       .status(500)
       .json({ message: "Lỗi hệ thống, vui lòng thử lại sau" });
@@ -261,4 +277,5 @@ module.exports = {
   handleGetComics,
   handleGetChaptersByComicId,
   handleGetCommentsByComicId,
+  handleGetBookmarkComicsByUserId,
 };

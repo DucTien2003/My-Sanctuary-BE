@@ -303,14 +303,14 @@ const getChaptersByChapterIdsService = async ({
   page = 1,
   limit = 0,
   orderBy = "created_at",
-  sortType = "ASC",
+  order = "ASC",
 }) => {
   const { count, chapters } = await databaseService.getChaptersByChapterIds({
     chapterIds,
     page: Number(page),
     limit: Number(limit),
     orderBy,
-    sortType,
+    order,
   });
 
   return {
@@ -386,7 +386,7 @@ const getChaptersByComicIdService = async ({
   comicId,
   page = 1,
   limit = 0,
-  sortType = "ASC",
+  order = "ASC",
   orderBy = "number_order",
 }) => {
   const { count, chapters } = await databaseService.getChaptersByComicId({
@@ -394,7 +394,7 @@ const getChaptersByComicIdService = async ({
     page: Number(page),
     limit: Number(limit),
     orderBy,
-    sortType,
+    order,
   });
 
   return {
